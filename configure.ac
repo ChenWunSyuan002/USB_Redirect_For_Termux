@@ -94,12 +94,31 @@ if test "$ac_test_CFLAGS" != set; then
   done
 fi
 
-PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES(LIBUSB, [libusb-1.0 >= 1.0.9])
+
+# For tools/usbredirect
+AC_ARG_WITH([tools],
+    AS_HELP_STRING([--without-tools], [Do not build standalone tools like usbredirect]))
+
+GLIB2_REQUIRED=2.44
+AS_IF([test "x$with_tools" != "xno" && test "x$with_tools" != "xyes"],
+      [PKG_CHECK_EXISTS([glib-2.0 >= $GLIB2_REQUIRED],
+                        [with_tools=yes], [with_tools=no])])
+
+AS_IF([test "x$with_tools" != xno],
+      [AS_IF([test "x$os_win32" = "xno"],
+             [PKG_CHECK_MODULES([GIO_UNIX], [gio-unix-2.0 >= $GLIB2_REQUIRED])]
+             [AC_DEFINE([HAVE_TOOLS], 1, [Missing gio-unix?])])
+       AS_IF([test "x$os_win32" = "xyes"],
+             [PKG_CHECK_MODULES([GIO_WIN], [gio-windows-2.0 >= $GLIB2_REQUIRED])]
+             [AC_DEFINE([HAVE_TOOLS], 1, [Missing gio-windows?])])])
+
+AM_CONDITIONAL([HAVE_TOOLS], [test "x$with_tools" = "xyes"])
 
 AC_CONFIG_FILES([
 Makefile
 docs/Makefile
+tools/Makefile
 usbredirhost/Makefile
 usbredirhost/libusbredirhost.pc
 usbredirparser/Makefile

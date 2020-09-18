@@ -1,4 +1,4 @@
-SUBDIRS = usbredirparser usbredirhost docs fuzzing
+SUBDIRS = usbredirparser usbredirhost docs fuzzing tools
 if ! OS_WIN32
 SUBDIRS += usbredirserver  usbredirtestclient
 endif
