@@ -23,6 +23,7 @@ struct redirect {
         int vendor;
         int product;
     } device;
+    bool is_client;
     char *addr;
     int port;
 
@@ -86,11 +87,13 @@ parse_opts(int *argc, char ***argv)
 {
     char *device = NULL;
     char *remoteaddr = NULL;
+    char *localaddr = NULL;
     struct redirect *self = NULL;
 
     GOptionEntry entries[] = {
         { "device", 0, 0, G_OPTION_ARG_STRING, &device, "Local USB device to be redirected", NULL },
         { "to", 0, 0, G_OPTION_ARG_STRING, &remoteaddr, "Client URI to connect to", NULL },
+        { "as", 0, 0, G_OPTION_ARG_STRING, &localaddr, "Server URI to be run", NULL },
         { NULL }
     };
 
@@ -106,8 +109,8 @@ parse_opts(int *argc, char ***argv)
 
     /* check options */
 
-    if (!remoteaddr) {
-        g_printerr("%s need to act as tcp client (-to)\n", *argv[0]);
+    if (!remoteaddr && !localaddr) {
+        g_printerr("%s need to act either as client (-to) or as server (-as)\n", *argv[0]);
         g_printerr("%s", g_option_context_get_help(ctx, TRUE, NULL));
         goto end;
     }
@@ -119,20 +122,24 @@ parse_opts(int *argc, char ***argv)
         goto end;
     }
 
-    if (!parse_opt_uri(remoteaddr, &self->addr, &self->port)) {
-        g_printerr("Failed to parse uri '%s' - expected: addr:port", remoteaddr);
+    if (parse_opt_uri(remoteaddr, &self->addr, &self->port)) {
+        self->is_client = true;
+    } else if (!parse_opt_uri(localaddr, &self->addr, &self->port)) {
+        g_printerr("Failed to parse uri '%s' - expected: addr:port", remoteaddr ? remoteaddr : localaddr);
         g_clear_pointer(&self, g_free);
         goto end;
     }
 
 end:
     if (self) {
-        g_debug("Device: '%04x:%04x', client connect addr: '%s', port: %d\n",
+        g_debug("Device: '%04x:%04x', %s addr: '%s', port: %d\n",
                 self->device.vendor,
                 self->device.product,
+                self->is_client ? "client connect" : "server at",
                 self->addr,
                 self->port);
     }
+    g_free(localaddr);
     g_free(remoteaddr);
     g_free(device);
     g_option_context_free(ctx);
@@ -314,6 +321,26 @@ signal_handler(gpointer user_data)
 }
 #endif
 
+static gboolean
+connection_incoming_cb(GSocketService    *service,
+                       GSocketConnection *client_connection,
+                       GObject           *source_object,
+                       gpointer           user_data)
+{
+    struct redirect *self = (struct redirect *) user_data;
+    self->connection = g_object_ref(client_connection);
+
+    /* Add a GSource watch to handle polling for us and handle IO in the callback */
+    GSocket *connection_socket = g_socket_connection_get_socket(self->connection);
+    int socket_fd = g_socket_get_fd(connection_socket);
+    GIOChannel *io_channel = g_io_channel_unix_new(socket_fd);
+    self->watch_server_id = g_io_add_watch(io_channel,
+            G_IO_IN | G_IO_OUT | G_IO_HUP | G_IO_ERR,
+            connection_handle_io_cb,
+            self);
+    return G_SOURCE_REMOVE;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -387,7 +414,7 @@ main(int argc, char *argv[])
         goto err_init;
     }
 
-    {
+    if (self->is_client) {
         /* Connect to a remote sever using usbredir to redirect the usb device */
         GSocketClient *client = g_socket_client_new();
         self->connection = g_socket_client_connect_to_host(client,
@@ -413,6 +440,29 @@ main(int argc, char *argv[])
                 G_IO_IN | G_IO_OUT | G_IO_HUP | G_IO_ERR,
                 connection_handle_io_cb,
                 self);
+    } else {
+        GSocketService *socket_service;
+
+        socket_service = g_socket_service_new ();
+        GInetAddress *iaddr = g_inet_address_new_loopback(G_SOCKET_FAMILY_IPV4);
+        GSocketAddress *saddr = g_inet_socket_address_new(iaddr, self->port);
+        g_object_unref(iaddr);
+
+        g_socket_listener_add_address(G_SOCKET_LISTENER (socket_service),
+                saddr,
+                G_SOCKET_TYPE_STREAM,
+                G_SOCKET_PROTOCOL_TCP,
+                NULL,
+                NULL,
+                &err);
+        if (err != NULL) {
+            g_warning("Failed to run as TCP server: %s", err->message);
+            goto end;
+        }
+
+      g_signal_connect(socket_service,
+              "incoming", G_CALLBACK (connection_incoming_cb),
+              self);
     }
 
     self->main_loop = g_main_loop_new(NULL, FALSE);
