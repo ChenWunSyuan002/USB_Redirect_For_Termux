@@ -5,6 +5,8 @@ variables:
     gcc git libtool make bzip2 libusb-devel
   FUZZING_DEPENDENCIES: >-
     clang libcxx-devel compiler-rt
+  MINGW_DEPENDENCIES: >-
+    mingw64-gcc mingw64-pkg-config mingw64-glib2 mingw64-libusbx
 
 build_stable:
   before_script:
@@ -30,4 +32,12 @@ build_fuzzing:
     - make install
     - make distcheck
 
-# vim: set sw=2 sts=2 et :
+windows:
+  before_script:
+    - dnf install -y --nogpgcheck $DEPENDENCIES $MINGW_DEPENDENCIES
+
+  script:
+    - ./autogen.sh --prefix=/usr
+    - mingw64-configure
+    - mingw64-make
+    - mingw64-make install
