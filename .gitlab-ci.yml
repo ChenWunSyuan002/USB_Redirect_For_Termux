@@ -2,21 +2,28 @@ image: fedora:latest
 
 variables:
   DEPENDENCIES: >-
-    gcc git libtool make bzip2 libusb-devel
+    gcc git libtool make bzip2 libusb-devel glib2-devel
   FUZZING_DEPENDENCIES: >-
     clang libcxx-devel compiler-rt
   MINGW_DEPENDENCIES: >-
     mingw64-gcc mingw64-pkg-config mingw64-glib2 mingw64-libusbx
 
+# Check if can build with and without usbredirect
 build_stable:
   before_script:
     - dnf install -y --nogpgcheck $DEPENDENCIES
   script:
-    - ./autogen.sh --prefix=/usr
+    - ./autogen.sh --prefix=/usr --with-tools
     - make
     - make check
     - make install
     - make distcheck
+
+    - git clean -xfd
+    - ./autogen.sh --prefix=/usr --without-tools
+    - make
+    - make check
+    - make install
 
 build_fuzzing:
   before_script:
