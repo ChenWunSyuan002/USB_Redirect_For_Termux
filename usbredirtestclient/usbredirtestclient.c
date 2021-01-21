@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
 
 static void usbredirtestclient_cmdline_help(void)
 {
-    printf("Avaiable commands:\n"
+    printf("Available commands:\n"
         "ctrl <endpoint> <request> <request_type> <value> <index> <length> [data]\n"
         "quit\n"
         "help\n");
