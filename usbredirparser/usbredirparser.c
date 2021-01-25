@@ -31,6 +31,11 @@
 /* Maximum size of an individual bulk transfer */
 #define MAX_BULK_TRANSFER_SIZE (64u * 1024u)
 
+/* Upper limit for accepted packet sizes including headers; makes the assumption
+ * that no header is longer than 1kB
+ */
+#define MAX_PACKET_SIZE (1024u + MAX_BULK_TRANSFER_SIZE)
+
 /* Locking convenience macros */
 #define LOCK(parser) \
     do { \
@@ -993,6 +998,13 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                 /* This should never happen */
                 if (type_header_len > sizeof(parser->type_header)) {
                     ERROR("error type specific header buffer too small, please report!!");
+                    parser->to_skip = parser->header.length;
+                    parser->header_read = 0;
+                    return -2;
+                }
+                if (parser->header.length > MAX_PACKET_SIZE) {
+                    ERROR("packet length of %d larger than permitted %d bytes",
+                          parser->header.length, MAX_PACKET_SIZE);
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
                     return -2;
