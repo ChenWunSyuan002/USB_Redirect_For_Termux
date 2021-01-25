@@ -559,7 +559,8 @@ static int usbredirparser_verify_type_header(
     struct usbredirparser_priv *parser =
         (struct usbredirparser_priv *)parser_pub;
     int command_for_host = 0, expect_extra_data = 0;
-    int length = 0, ep = -1;
+    uint32_t length = 0;
+    int ep = -1;
 
     if (parser->flags & usbredirparser_fl_usb_host) {
         command_for_host = 1;
@@ -697,13 +698,13 @@ static int usbredirparser_verify_type_header(
                                 usb_redir_cap_32bits_bulk_length) &&
             usbredirparser_peer_has_cap(parser_pub,
                                 usb_redir_cap_32bits_bulk_length)) {
-            length = (bulk_packet->length_high << 16) | bulk_packet->length;
+            length = (((uint32_t)bulk_packet->length_high) << 16) | bulk_packet->length;
         } else {
             length = bulk_packet->length;
             if (!send)
                 bulk_packet->length_high = 0;
         }
-        if ((uint32_t)length > MAX_BULK_TRANSFER_SIZE) {
+        if (length > MAX_BULK_TRANSFER_SIZE) {
             ERROR("bulk transfer length exceeds limits %u > %u",
                   (uint32_t)length, MAX_BULK_TRANSFER_SIZE);
             return 0;
