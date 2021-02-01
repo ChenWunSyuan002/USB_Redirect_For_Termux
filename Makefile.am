@@ -5,6 +5,7 @@ endif
 
 EXTRA_DIST =			\
 	 README.md		\
+	 ChangeLog.md		\
 	 README.multi-thread	\
 	 usb-redirection-protocol.txt
 
