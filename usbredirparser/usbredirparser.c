@@ -28,8 +28,8 @@
 #include "usbredirparser.h"
 #include "usbredirfilter.h"
 
-/* Put *some* upper limit on bulk transfer sizes */
-#define MAX_BULK_TRANSFER_SIZE (128u * 1024u * 1024u)
+/* Maximum size of an individual bulk transfer */
+#define MAX_BULK_TRANSFER_SIZE (64u * 1024u)
 
 /* Locking convenience macros */
 #define LOCK(parser) \
