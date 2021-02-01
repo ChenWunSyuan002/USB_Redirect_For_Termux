@@ -1,11 +1,6 @@
-SUBDIRS = usbredirparser usbredirhost docs
-if ! OS_WIN32
-SUBDIRS += usbredirserver  usbredirtestclient
-endif
-
-EXTRA_DIST =			\
-	 README.md		\
-	 ChangeLog.md
+EXTRA_DIST =				\
+	 README.multi-thread		\
+	 usb-redirection-protocol.txt
 
 MAINTAINERCLEANFILES =					\
 	$(GITIGNORE_MAINTAINERCLEANFILES_TOPLEVEL)	\

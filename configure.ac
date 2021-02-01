@@ -59,6 +59,7 @@ PKG_CHECK_MODULES(LIBUSB, [libusb-1.0 >= 1.0.9])
 
 AC_CONFIG_FILES([
 Makefile
+docs/Makefile
 usbredirhost/Makefile
 usbredirhost/libusbredirhost.pc
 usbredirparser/Makefile
