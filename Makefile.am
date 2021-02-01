@@ -3,7 +3,10 @@ if ! OS_WIN32
 SUBDIRS += usbredirserver  usbredirtestclient
 endif
 
-EXTRA_DIST = README.multi-thread usb-redirection-protocol.txt
+EXTRA_DIST =			\
+	 README.md		\
+	 README.multi-thread	\
+	 usb-redirection-protocol.txt
 
 MAINTAINERCLEANFILES =					\
 	$(GITIGNORE_MAINTAINERCLEANFILES_TOPLEVEL)	\
