@@ -58,7 +58,7 @@ typedef uint64_t (*usbredirhost_buffered_output_size)(void *priv);
       to make sure that libusb_handle_events gets called (using the
       libusb_context from the passed in libusb_device_handle) when there are
       events waiting on the filedescriptors libusb_get_pollfds returns
-   3) usbredirhost is partially multi-thread safe, see README.multi-thread
+   3) usbredirhost is partially multi-thread safe, see docs/multi-thread.md
 */
 
 enum {
@@ -73,7 +73,7 @@ struct usbredirhost *usbredirhost_open(
     usbredirparser_write write_guest_data_func,
     void *func_priv, const char *version, int verbose, int flags);
 
-/* See README.multi-thread */
+/* See docs/multi-thread.md */
 struct usbredirhost *usbredirhost_open_full(
     libusb_context *usb_ctx,
     libusb_device_handle *usb_dev_handle,

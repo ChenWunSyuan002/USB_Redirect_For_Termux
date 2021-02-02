@@ -1,5 +1,5 @@
 EXTRA_DIST =				\
-	 README.multi-thread		\
+	 multi-thread.md		\
 	 usb-redirection-protocol.txt
 
 MAINTAINERCLEANFILES =					\

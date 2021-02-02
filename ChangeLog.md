@@ -166,7 +166,7 @@
 - Switched to automake/autoconf/libtool based make system (Christophe Fergeau)
 
 - usbredirparser:
-  - limited multi-thread safeness, see README.multi-thread
+  - limited multi-thread safeness, see [multi-thread in docs](docs/multi-thread.md)
   - extend the device_connect packet header with a device_version field
   This new field is only send / received if both sides have the (new)
   `usb_redir_cap_connect_device_version` capability.
@@ -176,7 +176,7 @@
   `usbredirparser_send_device_connect`.
 
 - usbredirhost:
-  - limited multi-thread safeness, see README.multi-thread
+  - limited multi-thread safeness, see [multi-thread in docs](docs/multi-thread.md)
   - properly handle clear stalls send from the usbguest
   - try to keep our iso buffer size near the target size
   - implement `usb_redir_cap_connect_device_version`
