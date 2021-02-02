@@ -1,6 +1,6 @@
 EXTRA_DIST =				\
 	 multi-thread.md		\
-	 usb-redirection-protocol.txt
+	 usb-redirection-protocol.md
 
 MAINTAINERCLEANFILES =					\
 	$(GITIGNORE_MAINTAINERCLEANFILES_TOPLEVEL)	\

@@ -203,4 +203,4 @@
 # ubsredir-0.3 - 14 July 2011
 
 - Initial release, start at version 0.3 to match the version of
- the protocol desciption doc usb-redirection-protocol.txt
+ the protocol desciption doc [usb-redirection-protocol.md](docs/usb-redirection-protocol.md)
