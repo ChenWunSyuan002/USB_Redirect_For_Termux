@@ -20,6 +20,7 @@ AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 AC_PROG_CC
+AC_PROG_CXX
 AC_HEADER_STDC
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -38,6 +39,45 @@ case "$host" in
 esac
 AC_MSG_RESULT([$os_win32])
 AM_CONDITIONAL([OS_WIN32],[test "$os_win32" = "yes"])
+
+AC_ARG_ENABLE([fuzzing],
+  AS_HELP_STRING([--enable-fuzzing@<:@=MODE@:>@],
+    [Enable libFuzzer integration]))
+
+AS_CASE(["$enable_fuzzing"], [yes], [
+  AC_REQUIRE([AC_PROG_CXX])
+
+  AC_LANG_PUSH([C++])
+  AC_CHECK_HEADER([fuzzer/FuzzedDataProvider.h], [], [
+    AC_MSG_FAILURE([libFuzzer headers are required])
+  ])
+
+  save_LDFLAGS="$LDFLAGS"
+  LDFLAGS="${LDFLAGS} ${LIB_FUZZING_ENGINE}"
+  AC_MSG_CHECKING([for fuzzing engine])
+  # Test whether linker already provides a main function, as is the case with
+  # fuzzing-enabled compilers.
+  AC_LINK_IFELSE([
+    AC_LANG_SOURCE([[
+      #include <cstddef>
+      #include <cstdint>
+      extern "C" int LLVMFuzzerTestOneInput(const uint8_t *, size_t) {
+        return 0;
+      }
+    ]])], [
+    AC_MSG_RESULT(yes)
+    ], [
+    AC_MSG_RESULT([not found, enabling standalone replacement])
+    AS_VAR_SET([LIB_FUZZING_ENGINE], [libstandalone.a])
+    ])
+  LDFLAGS="$save_LDFLAGS"
+
+  AC_LANG_POP([C++])
+])
+
+AM_CONDITIONAL([ENABLE_FUZZING], [test "x$enable_fuzzing" = "xyes"])
+AC_ARG_VAR([LIB_FUZZING_ENGINE], [Location of prebuilt fuzzing engine library])
+AC_SUBST([LIB_FUZZING_ENGINE])
 
 # Set some sane default CFLAGS, avoid having to do another release like 0.4.1
 if test "$ac_test_CFLAGS" != set; then
@@ -66,5 +106,6 @@ usbredirparser/Makefile
 usbredirparser/libusbredirparser-0.5.pc
 usbredirserver/Makefile
 usbredirtestclient/Makefile
+fuzzing/Makefile
 ])
 AC_OUTPUT
