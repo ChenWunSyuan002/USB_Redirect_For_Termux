@@ -1,8 +1,10 @@
 image: fedora:latest
 
 variables:
-  DEPENDENCIES: gcc git libtool make bzip2
-                libusb-devel
+  DEPENDENCIES: >-
+    gcc git libtool make bzip2 libusb-devel
+  FUZZING_DEPENDENCIES: >-
+    clang libcxx-devel compiler-rt
 
 build_stable:
   before_script:
@@ -13,3 +15,19 @@ build_stable:
     - make check
     - make install
     - make distcheck
+
+build_fuzzing:
+  before_script:
+    - dnf install -y --nogpgcheck $DEPENDENCIES $FUZZING_DEPENDENCIES
+  script:
+    - >-
+      ./autogen.sh --prefix=/usr --enable-fuzzing \
+        CC='clang -fsanitize=fuzzer-no-link -fsanitize=address' \
+        CXX='clang++ -fsanitize=fuzzer-no-link -fsanitize=address' \
+        LIB_FUZZING_ENGINE='-fsanitize=fuzzer'
+    - make
+    - make check
+    - make install
+    - make distcheck
+
+# vim: set sw=2 sts=2 et :
