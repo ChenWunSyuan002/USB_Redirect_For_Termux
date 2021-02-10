@@ -1,6 +1,10 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdbool.h>
+
+#define G_LOG_DOMAIN "usbredirect"
+#define G_LOG_USE_STRUCTURED
+
 #include <glib.h>
 #include <gio/gio.h>
 #include <libusb.h>
@@ -27,6 +31,7 @@ struct redirect {
     bool keepalive;
     char *addr;
     int port;
+    int verbosity;
 
     struct usbredirhost *usbredirhost;
     GSocketConnection *connection;
@@ -90,6 +95,7 @@ parse_opts(int *argc, char ***argv)
     char *remoteaddr = NULL;
     char *localaddr = NULL;
     gboolean keepalive = FALSE;
+    gint verbosity = 0; /* none */
     struct redirect *self = NULL;
 
     GOptionEntry entries[] = {
@@ -97,6 +103,7 @@ parse_opts(int *argc, char ***argv)
         { "to", 0, 0, G_OPTION_ARG_STRING, &remoteaddr, "Client URI to connect to", NULL },
         { "as", 0, 0, G_OPTION_ARG_STRING, &localaddr, "Server URI to be run", NULL },
         { "keepalive", 'k', 0, G_OPTION_ARG_NONE, &keepalive, "If we should set SO_KEEPALIVE flag on underlying socket", NULL },
+        { "verbose", 'v', 0, G_OPTION_ARG_INT, &verbosity, "Set log level between 1-5 where 5 being the most verbose", NULL },
         { NULL }
     };
 
@@ -134,8 +141,10 @@ parse_opts(int *argc, char ***argv)
     }
 
     self->keepalive = keepalive;
-    g_debug("options: keepalive=%s",
-            self->keepalive ? "ON":"OFF");
+    self->verbosity = verbosity;
+    g_debug("options: keepalive=%s, verbosity=%d",
+            self->keepalive ? "ON":"OFF",
+            self->verbosity);
 
 end:
     if (self) {
@@ -177,7 +186,27 @@ thread_handle_libusb_events(gpointer user_data)
 static void
 usbredir_log_cb(void *priv, int level, const char *msg)
 {
-    g_printerr("%s\n", msg);
+    GLogLevelFlags glog_level;
+
+    switch(level) {
+    case usbredirparser_error:
+        glog_level = G_LOG_LEVEL_ERROR;
+        break;
+    case usbredirparser_warning:
+        glog_level = G_LOG_LEVEL_WARNING;
+        break;
+    case usbredirparser_info:
+        glog_level = G_LOG_LEVEL_INFO;
+        break;
+    case usbredirparser_debug:
+    case usbredirparser_debug_data:
+        glog_level = G_LOG_LEVEL_DEBUG;
+        break;
+    default:
+        g_warn_if_reached();
+        return;
+    }
+    g_log_structured(G_LOG_DOMAIN, glog_level, "MESSAGE", msg);
 }
 
 static int
@@ -353,6 +382,7 @@ int
 main(int argc, char *argv[])
 {
     GError *err = NULL;
+
     struct redirect *self = parse_opts(&argc, &argv);
     if (!self) {
         /* specific issues logged in parse_opts() */
@@ -415,7 +445,7 @@ main(int argc, char *argv[])
             usbredir_free_lock,
             self,
             PACKAGE_STRING,
-            usbredirparser_none,
+            self->verbosity,
             usbredirhost_fl_write_cb_owns_buffer);
     if (!self->usbredirhost) {
         g_warning("Error starting usbredirhost");
