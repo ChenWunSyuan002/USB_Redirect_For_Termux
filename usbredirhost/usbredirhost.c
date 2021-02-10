@@ -69,6 +69,9 @@
             (host)->flush_writes_func((host)->func_priv); \
     } while (0)
 
+#define CLAMP(val, min, max) \
+	((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
+
 struct usbredirtransfer {
     struct usbredirhost *host;        /* Back pointer to the the redirhost */
     struct libusb_transfer *transfer; /* Back pointer to the libusb transfer */
@@ -752,7 +755,8 @@ struct usbredirhost *usbredirhost_open_full(
                         parser_flags);
 
 #if LIBUSB_API_VERSION >= 0x01000106
-    int ret = libusb_set_option(host->ctx, LIBUSB_OPTION_LOG_LEVEL, host->verbose);
+    int ret = libusb_set_option(host->ctx, LIBUSB_OPTION_LOG_LEVEL,
+            CLAMP(host->verbose, LIBUSB_LOG_LEVEL_NONE, LIBUSB_LOG_LEVEL_DEBUG));
     if (ret != LIBUSB_SUCCESS) {
         ERROR("error setting libusb log level: %s", libusb_error_name(ret));
         usbredirhost_close(host);
