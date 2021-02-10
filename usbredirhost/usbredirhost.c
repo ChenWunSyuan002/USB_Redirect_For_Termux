@@ -752,7 +752,12 @@ struct usbredirhost *usbredirhost_open_full(
                         parser_flags);
 
 #if LIBUSB_API_VERSION >= 0x01000106
-    libusb_set_option(host->ctx, LIBUSB_OPTION_LOG_LEVEL, host->verbose);
+    int ret = libusb_set_option(host->ctx, LIBUSB_OPTION_LOG_LEVEL, host->verbose);
+    if (ret != LIBUSB_SUCCESS) {
+        ERROR("error setting libusb log level: %s", libusb_error_name(ret));
+        usbredirhost_close(host);
+        return NULL;
+    }
 #else
     libusb_set_debug(host->ctx, host->verbose);
 #endif
