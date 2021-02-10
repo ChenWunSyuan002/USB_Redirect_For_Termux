@@ -183,6 +183,37 @@ thread_handle_libusb_events(gpointer user_data)
     return NULL;
 }
 
+#if LIBUSBX_API_VERSION >= 0x01000107
+static void
+debug_libusb_cb(libusb_context *ctx, enum libusb_log_level level, const char *msg)
+{
+    GLogLevelFlags glog_level;
+
+    switch(level) {
+    case LIBUSB_LOG_LEVEL_ERROR:
+        glog_level = G_LOG_LEVEL_ERROR;
+        break;
+    case LIBUSB_LOG_LEVEL_WARNING:
+        glog_level = G_LOG_LEVEL_WARNING;
+        break;
+    case LIBUSB_LOG_LEVEL_INFO:
+        glog_level = G_LOG_LEVEL_INFO;
+        break;
+    case LIBUSB_LOG_LEVEL_DEBUG:
+        glog_level = G_LOG_LEVEL_DEBUG;
+        break;
+    default:
+        g_warn_if_reached();
+        return;
+    }
+
+    /* Do not print the '\n' line feed */
+    size_t len = strlen(msg);
+    len = (msg[len - 1] == '\n') ? len - 1 : len;
+    g_log_structured(G_LOG_DOMAIN, glog_level, "MESSAGE", "%.*s", len - 1, msg);
+}
+#endif
+
 static void
 usbredir_log_cb(void *priv, int level, const char *msg)
 {
@@ -393,6 +424,11 @@ main(int argc, char *argv[])
         goto err_init;
     }
 
+#if LIBUSBX_API_VERSION >= 0x01000107
+    /* This was introduced in 1.0.23 */
+    libusb_set_log_cb(NULL, debug_libusb_cb, LIBUSB_LOG_CB_GLOBAL);
+#endif
+
 #ifdef G_OS_WIN32
     /* WinUSB is the default by backwards compatibility so this is needed to
      * switch to USBDk backend. */
@@ -450,6 +486,16 @@ main(int argc, char *argv[])
     if (!self->usbredirhost) {
         g_warning("Error starting usbredirhost");
         goto err_init;
+    }
+
+    /* Only allow libusb logging if log verbosity is uredirparser_debug_data
+     * (or higher), otherwise we disable it here while keeping usbredir's logs enable. */
+    if  (self->verbosity < usbredirparser_debug_data)  {
+        int ret = libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_NONE);
+        if (ret != LIBUSB_SUCCESS) {
+            g_warning("error disabling libusb log level: %s", libusb_error_name(ret));
+            goto end;
+        }
     }
 
     if (self->is_client) {
