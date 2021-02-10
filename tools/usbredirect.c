@@ -24,6 +24,7 @@ struct redirect {
         int product;
     } device;
     bool is_client;
+    bool keepalive;
     char *addr;
     int port;
 
@@ -88,12 +89,14 @@ parse_opts(int *argc, char ***argv)
     char *device = NULL;
     char *remoteaddr = NULL;
     char *localaddr = NULL;
+    gboolean keepalive = FALSE;
     struct redirect *self = NULL;
 
     GOptionEntry entries[] = {
         { "device", 0, 0, G_OPTION_ARG_STRING, &device, "Local USB device to be redirected", NULL },
         { "to", 0, 0, G_OPTION_ARG_STRING, &remoteaddr, "Client URI to connect to", NULL },
         { "as", 0, 0, G_OPTION_ARG_STRING, &localaddr, "Server URI to be run", NULL },
+        { "keepalive", 'k', 0, G_OPTION_ARG_NONE, &keepalive, "If we should set SO_KEEPALIVE flag on underlying socket", NULL },
         { NULL }
     };
 
@@ -129,6 +132,10 @@ parse_opts(int *argc, char ***argv)
         g_clear_pointer(&self, g_free);
         goto end;
     }
+
+    self->keepalive = keepalive;
+    g_debug("options: keepalive=%s",
+            self->keepalive ? "ON":"OFF");
 
 end:
     if (self) {
@@ -332,6 +339,7 @@ connection_incoming_cb(GSocketService    *service,
 
     /* Add a GSource watch to handle polling for us and handle IO in the callback */
     GSocket *connection_socket = g_socket_connection_get_socket(self->connection);
+    g_socket_set_keepalive(connection_socket, self->keepalive);
     int socket_fd = g_socket_get_fd(connection_socket);
     GIOChannel *io_channel = g_io_channel_unix_new(socket_fd);
     self->watch_server_id = g_io_add_watch(io_channel,
@@ -429,6 +437,7 @@ main(int argc, char *argv[])
         }
 
         GSocket *connection_socket = g_socket_connection_get_socket(self->connection);
+        g_socket_set_keepalive(connection_socket, self->keepalive);
         int socket_fd = g_socket_get_fd(connection_socket);
         GIOChannel *io_channel =
 #ifdef G_OS_UNIX
