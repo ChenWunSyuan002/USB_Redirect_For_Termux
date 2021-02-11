@@ -50,6 +50,41 @@ parse_opt_device(const char *device, int *vendor, int *product)
         return true;
     }
 
+    if (g_strrstr(device, "-") != NULL) {
+        /* Get vendor and product by bus and address number */
+        char **usbid = g_strsplit(device, "-", 2);
+        if (usbid == NULL || usbid[0] == NULL || usbid[1] == NULL || usbid[2] != NULL) {
+            g_strfreev(usbid);
+            return false;
+        }
+        gint64 bus = g_ascii_strtoll(usbid[0], NULL, 10);
+        gint64 addr = g_ascii_strtoll(usbid[1], NULL, 10);
+
+        libusb_device **list = NULL;
+        ssize_t i, n;
+
+        n = libusb_get_device_list(NULL, &list);
+        for (i = 0; i < n; i++) {
+            if (libusb_get_bus_number(list[i]) == bus &&
+                    libusb_get_device_address(list[i]) == addr) {
+                break;
+            }
+        }
+
+        if (i == n) {
+            libusb_free_device_list(list, true);
+            return false;
+        }
+
+        struct libusb_device_descriptor desc;
+        libusb_get_device_descriptor(list[i], &desc);
+        *vendor = desc.idVendor;
+        *product = desc.idProduct;
+
+        libusb_free_device_list(list, true);
+        return true;
+    }
+
     char **usbid = g_strsplit(device, ":", 2);
     if (usbid == NULL || usbid[0] == NULL || usbid[1] == NULL || usbid[2] != NULL) {
         g_strfreev(usbid);
@@ -64,6 +99,7 @@ parse_opt_device(const char *device, int *vendor, int *product)
         g_printerr("Bad vendor:product values %04x:%04x", *vendor, *product);
         return false;
     }
+
     return true;
 }
 
@@ -127,7 +163,7 @@ parse_opts(int *argc, char ***argv)
 
     self = g_new0(struct redirect, 1);
     if (!parse_opt_device(device, &self->device.vendor, &self->device.product)) {
-        g_printerr("Failed to parse device: '%s' - expected: vendor:product\n", device);
+        g_printerr("Failed to parse device: '%s' - expected: vendor:product or busnum-devnum\n", device);
         g_clear_pointer(&self, g_free);
         goto end;
     }
@@ -414,14 +450,15 @@ main(int argc, char *argv[])
 {
     GError *err = NULL;
 
+    if (libusb_init(NULL)) {
+        g_warning("Could not init libusb\n");
+        goto err_init;
+    }
+
     struct redirect *self = parse_opts(&argc, &argv);
     if (!self) {
         /* specific issues logged in parse_opts() */
         return 1;
-    }
-    if (libusb_init(NULL)) {
-        g_warning("Could not init libusb\n");
-        goto err_init;
     }
 
 #if LIBUSBX_API_VERSION >= 0x01000107
