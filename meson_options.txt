@@ -1,0 +1,4 @@
+option('git_werror',
+    type: 'feature',
+    value: 'auto',
+    description: 'use -Werror if building from GIT')
