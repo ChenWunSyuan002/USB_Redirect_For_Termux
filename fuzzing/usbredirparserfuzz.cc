@@ -101,7 +101,7 @@ static void parser_reset(void *priv)
 static void parser_interface_info(void *priv,
     struct usb_redir_interface_info_header *info)
 {
-    int i;
+    uint32_t i;
 
     log("%s:", __func__);
 
