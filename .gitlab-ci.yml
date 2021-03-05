@@ -2,14 +2,14 @@ image: fedora:latest
 
 variables:
   DEPENDENCIES: >-
-    gcc git libtool make bzip2 libusb-devel glib2-devel
+    gcc clang meson ninja-build git libtool make bzip2 libusb-devel glib2-devel
   FUZZING_DEPENDENCIES: >-
     clang libcxx-devel compiler-rt
   MINGW_DEPENDENCIES: >-
     mingw64-gcc mingw64-pkg-config mingw64-glib2 mingw64-libusbx
 
 # Check if can build with and without usbredirect
-build_stable:
+stable:
   before_script:
     - dnf install -y --nogpgcheck $DEPENDENCIES
   script:
@@ -25,7 +25,11 @@ build_stable:
     - make check
     - make install
 
-build_fuzzing:
+    - meson . _build -Dfuzzing=disabled -Dtools=enabled
+    - ninja -C _build
+    - ninja -C _build dist
+
+fuzzing:
   before_script:
     - dnf install -y --nogpgcheck $DEPENDENCIES $FUZZING_DEPENDENCIES
   script:
@@ -40,13 +44,16 @@ build_fuzzing:
     - make distcheck
 
     - ./build-aux/oss-fuzz.sh
-
 windows:
   before_script:
     - dnf install -y --nogpgcheck $DEPENDENCIES $MINGW_DEPENDENCIES
 
   script:
-    - ./autogen.sh --prefix=/usr
+    - ./autogen.sh --prefix=/usr --enable-tools
     - mingw64-configure
     - mingw64-make
     - mingw64-make install
+
+    - mkdir _win_build && cd _win_build
+    - mingw64-meson -Dtools=enabled
+    - ninja
