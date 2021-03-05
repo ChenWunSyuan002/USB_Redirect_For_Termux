@@ -1,4 +1,4 @@
-project('usbredir', 'c',
+project('usbredir', 'c', 'cpp',
     version: '0.8.0',
     license: 'LGPLv2.1+',
     meson_version : '>= 0.53',
@@ -29,6 +29,21 @@ add_project_arguments(supported_cc_flags, language: 'c')
 
 if host_machine.system() != 'windows'
     add_project_arguments('-fstack-protector', language: 'c')
+endif
+
+want_libfuzzer = get_option('llvm-fuzz').enabled()
+if want_libfuzzer
+    add_languages('cpp', required : true)
+    fuzzing_engine = meson.get_compiler('cpp').find_library('Fuzzer', required : false)
+    if fuzzing_engine.found()
+        add_project_arguments('-fsanitize-coverage=trace-pc-guard,trace-cmp', language : 'c')
+    elif compiler.has_argument('-fsanitize=fuzzer-no-link')
+        add_project_arguments('-fsanitize=fuzzer-no-link', language : 'c')
+    else
+        error('Looks like neither libFuzzer nor -fsanitize=fuzzer-no-link is supported')
+    endif
+    # This is preferable to static linking
+    add_project_link_arguments('-shared-libsan', language: ['c', 'cpp'])
 endif
 
 config = configuration_data()
@@ -76,6 +91,9 @@ subdir('usbredirhost')
 if host_machine.system() != 'windows'
     subdir('usbredirserver')
     subdir('usbredirtestclient')
+    if want_libfuzzer
+        subdir('fuzzing')
+    endif
 endif
 
 summary(summary_info, bool_yn: true)

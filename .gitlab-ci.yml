@@ -39,6 +39,8 @@ build_fuzzing:
     - make install
     - make distcheck
 
+    - ./build-aux/oss-fuzz.sh
+
 windows:
   before_script:
     - dnf install -y --nogpgcheck $DEPENDENCIES $MINGW_DEPENDENCIES
