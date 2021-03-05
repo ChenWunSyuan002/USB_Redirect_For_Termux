@@ -18,3 +18,6 @@ usbredirect_CFLAGS = \
 
 dist_man_MANS = usbredirect.1
 endif
+
+EXTRA_DIST =	\
+	 meson.build

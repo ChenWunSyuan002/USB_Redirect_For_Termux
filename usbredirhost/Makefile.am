@@ -12,4 +12,7 @@ libusbredirhost_la_LDFLAGS = -version-info $(LIBUSBREDIRHOST_SO_VERSION) \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libusbredirhost.pc
 
+EXTRA_DIST =	\
+	 meson.build
+
 -include $(top_srcdir)/git.mk

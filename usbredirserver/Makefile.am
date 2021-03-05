@@ -8,3 +8,6 @@ usbredirserver_CFLAGS = $(LIBUSB_CFLAGS) \
                         -I$(top_srcdir)/usbredirparser
 
 dist_man_MANS = usbredirserver.1
+
+EXTRA_DIST =	\
+	 meson.build

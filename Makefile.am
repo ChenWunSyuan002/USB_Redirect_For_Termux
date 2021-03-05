@@ -4,6 +4,7 @@ SUBDIRS += usbredirserver  usbredirtestclient
 endif
 
 EXTRA_DIST =			\
+	 meson.build		\
 	 README.md		\
 	 ChangeLog.md
 
