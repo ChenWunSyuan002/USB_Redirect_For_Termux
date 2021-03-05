@@ -7,3 +7,8 @@ option('llvm-fuzz',
     type : 'feature',
     value : 'auto',
     description : 'Enable libFuzzer integration')
+
+option('tools',
+    type : 'feature',
+    value : 'enabled',
+    description : 'Build usbredir\'s tools such as usbredirect')

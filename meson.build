@@ -88,6 +88,9 @@ configure_file(output : 'config.h', configuration : config)
 
 subdir('usbredirparser')
 subdir('usbredirhost')
+if get_option('tools').enabled()
+    subdir('tools')
+endif
 if host_machine.system() != 'windows'
     subdir('usbredirserver')
     subdir('usbredirtestclient')
