@@ -84,6 +84,14 @@ foreach header : headers
     endif
 endforeach
 
+if host_machine.system() == 'windows'
+    wixl_arch = 'x64'
+    if host_machine.cpu() != 'x86_64'
+        wixl_arch = 'x86'
+    endif
+    config.set('WIXL_ARCH', wixl_arch)
+endif
+
 configure_file(output : 'config.h', configuration : config)
 
 subdir('usbredirparser')
@@ -98,5 +106,6 @@ if host_machine.system() != 'windows'
         subdir('fuzzing')
     endif
 endif
+subdir('data')
 
 summary(summary_info, bool_yn: true)
