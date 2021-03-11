@@ -154,7 +154,9 @@ static const struct usbredirhost_dev_ids usbredirhost_reset_blacklist[] = {
 };
 
 static void
-#if defined __GNUC__
+#if defined __MINGW_PRINTF_FORMAT
+__attribute__((format(__MINGW_PRINTF_FORMAT, 3, 4)))
+#elif defined __GNUC__
 __attribute__((format(printf, 3, 4)))
 #endif
 va_log(struct usbredirhost *host, int level, const char *fmt, ...)
