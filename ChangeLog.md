@@ -1,3 +1,15 @@
+# usbredir-0.9.0 - 02 Apr 2021
+
+-  !2 Add usbredirect tool with feature parity with usbredirserver
+-  !6 Add fuzzer for usbredirparser
+- !12 Add MSI installer for usbredirect tool
+- !11 Add meson build: autotool will be removed in a future release
+-  !5 Limit packet's length to 65 kB
+-  !4 Fix wrong up-cast when checking for package's length
+- Require LLVM's compiler-rt (optional: for fuzzer)
+- Require glib2 >= 2.44 (optional: for usbredirect)
+- Deprecate usbredirserver in favor of usbredirect
+
 # usbredir-0.8.0 - 03 Aug 2018
 
 - Source code and bug tracker hosted in Freedesktop's instance of Gitlab

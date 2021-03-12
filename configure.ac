@@ -1,5 +1,5 @@
 AC_PREREQ(2.63)
-AC_INIT([usbredir], [0.8.0])
+AC_INIT([usbredir], [0.9.0])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AM_CONFIG_HEADER([config.h])
@@ -10,10 +10,10 @@ dnl libtool versioning
 #                 changes to the signature and the semantic)
 #  ? :+1 : ?   == just internal changes
 # CURRENT : REVISION : AGE
-LIBUSBREDIRHOST_SO_VERSION=1:1:0
+LIBUSBREDIRHOST_SO_VERSION=1:2:0
 AC_SUBST(LIBUSBREDIRHOST_SO_VERSION)
 
-LIBUSBREDIRPARSER_SO_VERSION=1:1:0
+LIBUSBREDIRPARSER_SO_VERSION=1:2:0
 AC_SUBST(LIBUSBREDIRPARSER_SO_VERSION)
 
 AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip])

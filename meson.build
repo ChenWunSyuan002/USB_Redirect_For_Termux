@@ -1,5 +1,5 @@
 project('usbredir', 'c', 'cpp',
-    version: '0.8.0',
+    version: '0.9.0',
     license: 'LGPLv2.1+',
     meson_version : '>= 0.53',
     default_options : [

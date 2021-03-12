@@ -1,7 +1,7 @@
 # so verison, see:
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 usbredir_host_current = 1
-usbredir_host_revision = 1
+usbredir_host_revision = 2
 usbredir_host_age = 0
 usbredir_host_so_version = '@0@.@1@.@2@'.format(
     usbredir_host_current - usbredir_host_age,
