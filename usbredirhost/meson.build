@@ -21,7 +21,10 @@ usbredir_host_link_args = [
     '-Wl,--no-undefined',
 ]
 
-libusb = dependency('libusb-1.0', version: '>= 1.0.9')
+libusb = 'libusb-1.0'
+libusb_version = '>= 1.0.9'
+libusb_required_version = '@0@ @1@'.format(libusb, libusb_version)
+libusb = dependency(libusb, version: libusb_version)
 
 usbredir_host_lib = library('usbredirhost',
     usbredir_host_sources,
@@ -42,3 +45,11 @@ headers = [
 ]
 
 install_headers(headers)
+
+# libusbredirhost.pc
+pkgconfig = import('pkgconfig')
+pkgconfig.generate(usbredir_host_lib,
+                   name : 'libusbredirhost',
+                   description : 'usbredirhost library',
+                   requires : [libusb_required_version, 'usbredirparser-0.5'],
+                   variables : 'exec_prefix=${prefix}')

@@ -51,3 +51,10 @@ headers = [
 ]
 
 install_headers(headers)
+
+# libusbredirparser.pc
+pkgconfig = import('pkgconfig')
+pkgconfig.generate(usbredir_parser_lib,
+                   name : 'libusbredirparser-0.5',
+                   description : 'usbredirparser library',
+                   variables : 'exec_prefix=${prefix}')
