@@ -26,18 +26,23 @@ libusb_version = '>= 1.0.9'
 libusb_required_version = '@0@ @1@'.format(libusb, libusb_version)
 libusb = dependency(libusb, version: libusb_version)
 
+usbredir_host_include_directories = [
+    include_directories('.'),
+    usbredir_include_root_dir,
+]
+
 usbredir_host_lib = library('usbredirhost',
     usbredir_host_sources,
     version : usbredir_host_so_version,
     install : true,
-    include_directories: usbredir_include_root_dir,
+    include_directories: usbredir_host_include_directories,
     link_args : [usbredir_host_link_args],
     link_depends : usbredir_host_map_file,
     dependencies : [libusb, usbredir_parser_lib_dep])
 
 usbredir_host_lib_dep = declare_dependency(
     link_with: usbredir_host_lib,
-    include_directories: usbredir_include_root_dir,
+    include_directories: usbredir_host_include_directories,
     dependencies: [libusb, usbredir_parser_lib_dep])
 
 headers = [
