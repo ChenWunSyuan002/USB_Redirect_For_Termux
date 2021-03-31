@@ -16,7 +16,6 @@
    along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include <array>
 #include <algorithm>
 #include <memory>
@@ -32,8 +31,15 @@
 
 #include "usbredirparser.h"
 
-static struct usbredirparser *parser;
+namespace {
+struct ParserDeleter {
+    void operator()(struct usbredirparser *p) {
+        usbredirparser_destroy(p);
+    }
+};
+}
 
+static std::unique_ptr<struct usbredirparser, ParserDeleter> parser;
 static std::unique_ptr<FuzzedDataProvider> fdp;
 
 static void log(const char *format, ...)
@@ -257,7 +263,7 @@ static void parser_control_packet(void *priv, uint64_t id,
         control_packet->index,
         control_packet->length);
     dump_data(data, data_len);
-    usbredirparser_free_packet_data(parser, data);
+    usbredirparser_free_packet_data(parser.get(), data);
 }
 
 static void parser_bulk_packet(void *priv, uint64_t id,
@@ -273,7 +279,7 @@ static void parser_bulk_packet(void *priv, uint64_t id,
         bulk_packet->stream_id,
         bulk_packet->length_high);
     dump_data(data, data_len);
-    usbredirparser_free_packet_data(parser, data);
+    usbredirparser_free_packet_data(parser.get(), data);
 }
 
 static void parser_iso_packet(void *priv, uint64_t id,
@@ -286,7 +292,7 @@ static void parser_iso_packet(void *priv, uint64_t id,
         iso_packet->status,
         iso_packet->length);
     dump_data(data, data_len);
-    usbredirparser_free_packet_data(parser, data);
+    usbredirparser_free_packet_data(parser.get(), data);
 }
 
 static void parser_interrupt_packet(void *priv, uint64_t id,
@@ -299,7 +305,7 @@ static void parser_interrupt_packet(void *priv, uint64_t id,
         interrupt_packet->status,
         interrupt_packet->length);
     dump_data(data, data_len);
-    usbredirparser_free_packet_data(parser, data);
+    usbredirparser_free_packet_data(parser.get(), data);
 }
 
 static void parser_buffered_bulk_packet(void *priv, uint64_t id,
@@ -313,7 +319,7 @@ static void parser_buffered_bulk_packet(void *priv, uint64_t id,
         buffered_bulk_header->endpoint,
         buffered_bulk_header->status);
     dump_data(data, data_len);
-    usbredirparser_free_packet_data(parser, data);
+    usbredirparser_free_packet_data(parser.get(), data);
 }
 
 static void *parser_alloc_lock()
@@ -365,7 +371,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     fdp = std::make_unique<FuzzedDataProvider>(data, size);
 
-    parser = usbredirparser_create();
+    parser.reset(usbredirparser_create());
     if (parser == nullptr) {
         return 1;
     }
@@ -421,18 +427,19 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         init_flags |= usbredirparser_fl_usb_host;
     }
 
-    usbredirparser_init(parser, "fuzzer", caps.data(), caps.size(), init_flags);
+    usbredirparser_init(parser.get(), "fuzzer", caps.data(), caps.size(),
+                        init_flags);
 
     while (fdp->remaining_bytes() > 0) {
-        ret = usbredirparser_do_read(parser);
+        ret = usbredirparser_do_read(parser.get());
         if (ret != 0) {
             log("usbredirparser_do_read failed: %d\n", ret);
             status = 1;
             goto out;
         }
 
-        while (usbredirparser_has_data_to_write(parser)) {
-            ret = usbredirparser_do_write(parser);
+        while (usbredirparser_has_data_to_write(parser.get())) {
+            ret = usbredirparser_do_write(parser.get());
             if (ret != 0) {
                 log("usbredirparser_do_write failed: %d\n", ret);
                 status = 1;
@@ -442,7 +449,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
 
 out:
-    usbredirparser_destroy(parser);
+    parser.reset();
 
     return status;
 }
