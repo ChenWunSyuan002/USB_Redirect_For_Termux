@@ -3,10 +3,19 @@ option('git_werror',
     value: 'auto',
     description: 'use -Werror if building from GIT')
 
-option('llvm-fuzz',
+option('fuzzing',
     type : 'feature',
     value : 'auto',
     description : 'Enable libFuzzer integration')
+
+option('fuzzing-engine',
+    type : 'string',
+    value : 'standalone',
+    description : 'Location of prebuilt fuzzing engine library or "standalone" for built-in driver')
+
+option('fuzzing-install-dir',
+    type : 'string',
+    description : 'Installation directory for fuzzing binaries')
 
 option('tools',
     type : 'feature',

@@ -1,42 +1,56 @@
-compiler.has_header('fuzzer/FuzzedDataProvider.h', required: true)
+add_languages('cpp', required: true)
 
-usbredirparserfuzz_deps = []
-usbredirparserfuzz_link_args = []
+cpp_compiler = meson.get_compiler('cpp')
+cpp_compiler.has_header('fuzzer/FuzzedDataProvider.h', required: true)
 
-if fuzzing_engine.found()
-  usbredirparserfuzz_deps += fuzzing_engine
+link_args = []
+link_with = []
+
+fuzz_engine = get_option('fuzzing-engine')
+fuzz_install_dir = get_option('fuzzing-install-dir')
+
+if fuzz_engine == 'standalone'
+    standalone_lib = static_library('standalone',
+        sources: ['standalone.c'],
+        install: false,
+        )
+
+    link_with += [standalone_lib]
 else
-  usbredirparserfuzz_link_args += ['-fsanitize=fuzzer']
+    link_args += fuzz_engine.split()
+
+    if not cpp_compiler.links('''
+        #include <cstddef>
+        #include <cstdint>
+        extern "C" int LLVMFuzzerTestOneInput(const uint8_t *, size_t) {
+          return 0;
+        }
+        ''',
+        args: link_args,
+        )
+        error('Linking fuzzing test failed')
+    endif
 endif
 
-test_llvmfuzzer_function = '''
-#include <cstddef>
-#include <cstdint>
-'''
-builtin = compiler.has_function('LLVMFuzzerTestOneInput',
-    prefix : test_llvmfuzzer_function)
-if not builtin
-    standalone_sources = [
-        'standalone.c',
-    ]
+fuzz_targets = {
+    'usbredirparserfuzz': [usbredir_parser_lib_dep],
+    }
 
-    standalone_lib = static_library(
-        'standalone',
-        standalone_sources,
-        install : false)
+foreach target_name, deps : fuzz_targets
+    executable(target_name,
+        sources: [target_name + '.cc'],
+        dependencies: deps,
+        link_language: 'cpp',
+        link_args: link_args,
+        link_with: link_with,
+        install: (fuzz_install_dir != ''),
+        install_dir: fuzz_install_dir,
+        )
 
-    usbredirparserfuzz_deps += declare_dependency(link_with: standalone_lib)
-endif
-
-usbredirparserfuzz_sources = [
-    'usbredirparserfuzz.cc',
-]
-
-usbredirparserfuzz_deps += usbredir_parser_lib_dep
-
-executable('usbredirparserfuzz',
-    sources : usbredirparserfuzz_sources,
-    c_args : '-Wno-deprecated-declarations',
-    install : false,
-    link_args: usbredirparserfuzz_link_args,
-    dependencies : usbredirparserfuzz_deps)
+    if fuzz_install_dir != ''
+        install_data('default.options',
+            install_dir: fuzz_install_dir,
+            rename: target_name + '.options',
+            )
+    endif
+endforeach

@@ -29,21 +29,38 @@ stable:
     - ninja -C _build
     - ninja -C _build dist
 
-fuzzing:
+.fuzzing_base:
+  resource_group: fuzzing
   before_script:
     - dnf install -y --nogpgcheck $DEPENDENCIES $FUZZING_DEPENDENCIES
+    - export CC='clang -fsanitize=fuzzer-no-link -fsanitize=address'
+    - export CXX='clang++ -fsanitize=fuzzer-no-link -fsanitize=address'
+
+fuzzing_autoconf:
+  extends: .fuzzing_base
   script:
     - >-
       ./autogen.sh --prefix=/usr --enable-fuzzing \
-        CC='clang -fsanitize=fuzzer-no-link -fsanitize=address' \
-        CXX='clang++ -fsanitize=fuzzer-no-link -fsanitize=address' \
         LIB_FUZZING_ENGINE='-fsanitize=fuzzer'
     - make
     - make check
     - make install
     - make distcheck
 
+fuzzing_meson:
+  extends: .fuzzing_base
+  script:
+    - export LIB_FUZZING_ENGINE=-fsanitize=fuzzer
+    - export OUT=/tmp/fuzzer
     - ./build-aux/oss-fuzz.sh
+
+fuzzing_standalone:
+  extends: .fuzzing_base
+  script:
+    - export LIB_FUZZING_ENGINE=standalone
+    - export OUT=/tmp/fuzzer-standalone
+    - ./build-aux/oss-fuzz.sh
+
 windows:
   before_script:
     - dnf install -y --nogpgcheck $DEPENDENCIES $MINGW_DEPENDENCIES
