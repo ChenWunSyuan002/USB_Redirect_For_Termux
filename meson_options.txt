@@ -5,7 +5,7 @@ option('git_werror',
 
 option('fuzzing',
     type : 'feature',
-    value : 'auto',
+    value : 'disabled',
     description : 'Enable libFuzzer integration')
 
 option('fuzzing-engine',
