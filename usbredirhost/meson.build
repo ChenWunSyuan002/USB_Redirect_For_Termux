@@ -51,5 +51,5 @@ pkgconfig = import('pkgconfig')
 pkgconfig.generate(usbredir_host_lib,
                    name : 'libusbredirhost',
                    description : 'usbredirhost library',
-                   requires : [libusb_required_version, 'usbredirparser-0.5'],
+                   requires : [libusb_required_version, 'libusbredirparser-0.5'],
                    variables : 'exec_prefix=${prefix}')
