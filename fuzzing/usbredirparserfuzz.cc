@@ -37,12 +37,11 @@ struct ParserDeleter {
         usbredirparser_destroy(p);
     }
 };
-}
 
-static std::unique_ptr<struct usbredirparser, ParserDeleter> parser;
-static std::unique_ptr<FuzzedDataProvider> fdp;
+std::unique_ptr<struct usbredirparser, ParserDeleter> parser;
+std::unique_ptr<FuzzedDataProvider> fdp;
 
-static void log(const char *format, ...)
+void log(const char *format, ...)
 {
 #if 0
     va_list args;
@@ -53,12 +52,12 @@ static void log(const char *format, ...)
 #endif
 }
 
-static void parser_log(void *priv, int level, const char *msg)
+void parser_log(void *priv, int level, const char *msg)
 {
     log("[%d] %s\n", level, msg);
 }
 
-static int parser_read(void *priv, uint8_t *data, int count)
+int parser_read(void *priv, uint8_t *data, int count)
 {
     log("%s: %d bytes\n", __func__, count);
 
@@ -73,14 +72,14 @@ static int parser_read(void *priv, uint8_t *data, int count)
     return count;
 }
 
-static int parser_write(void *priv, uint8_t *data, int count)
+int parser_write(void *priv, uint8_t *data, int count)
 {
     log("%s: %d bytes\n", __func__, count);
 
     return count;
 }
 
-static void parser_device_connect(void *priv,
+void parser_device_connect(void *priv,
     struct usb_redir_device_connect_header *device_connect)
 {
     log("%s: speed=%d, class=%d, subclass=%d, protocol=%d, vendor=%04x,"
@@ -94,17 +93,17 @@ static void parser_device_connect(void *priv,
         device_connect->product_id);
 }
 
-static void parser_device_disconnect(void *priv)
+void parser_device_disconnect(void *priv)
 {
     log("%s\n", __func__);
 }
 
-static void parser_reset(void *priv)
+void parser_reset(void *priv)
 {
     log("%s\n", __func__);
 }
 
-static void parser_interface_info(void *priv,
+void parser_interface_info(void *priv,
     struct usb_redir_interface_info_header *info)
 {
     uint32_t i;
@@ -120,7 +119,7 @@ static void parser_interface_info(void *priv,
     log("\n");
 }
 
-static void parser_ep_info(void *priv,
+void parser_ep_info(void *priv,
     struct usb_redir_ep_info_header *ep_info)
 {
     int i;
@@ -139,33 +138,33 @@ static void parser_ep_info(void *priv,
     log("\n");
 }
 
-static void parser_set_configuration(void *priv, uint64_t id,
+void parser_set_configuration(void *priv, uint64_t id,
     struct usb_redir_set_configuration_header *set_configuration)
 {
 }
 
-static void parser_get_configuration(void *priv, uint64_t id)
+void parser_get_configuration(void *priv, uint64_t id)
 {
 }
 
-static void parser_configuration_status(void *priv, uint64_t id,
+void parser_configuration_status(void *priv, uint64_t id,
     struct usb_redir_configuration_status_header *config_status)
 {
     log("%s: id=%" PRIu64 ", status=%d, configuration=%d\n",
         __func__, id, config_status->status, config_status->configuration);
 }
 
-static void parser_set_alt_setting(void *priv, uint64_t id,
+void parser_set_alt_setting(void *priv, uint64_t id,
     struct usb_redir_set_alt_setting_header *set_alt_setting)
 {
 }
 
-static void parser_get_alt_setting(void *priv, uint64_t id,
+void parser_get_alt_setting(void *priv, uint64_t id,
     struct usb_redir_get_alt_setting_header *get_alt_setting)
 {
 }
 
-static void parser_alt_setting_status(void *priv, uint64_t id,
+void parser_alt_setting_status(void *priv, uint64_t id,
     struct usb_redir_alt_setting_status_header *alt_setting_status)
 {
     log("%s: id=%" PRIu64 ", status=%d, interface=%d, alt=%d\n",
@@ -175,65 +174,65 @@ static void parser_alt_setting_status(void *priv, uint64_t id,
         alt_setting_status->alt);
 }
 
-static void parser_start_iso_stream(void *priv, uint64_t id,
+void parser_start_iso_stream(void *priv, uint64_t id,
     struct usb_redir_start_iso_stream_header *start_iso_stream)
 {
 }
 
-static void parser_stop_iso_stream(void *priv, uint64_t id,
+void parser_stop_iso_stream(void *priv, uint64_t id,
     struct usb_redir_stop_iso_stream_header *stop_iso_stream)
 {
 }
 
-static void parser_iso_stream_status(void *priv, uint64_t id,
+void parser_iso_stream_status(void *priv, uint64_t id,
     struct usb_redir_iso_stream_status_header *iso_stream_status)
 {
 }
 
-static void parser_start_interrupt_receiving(void *priv, uint64_t id,
+void parser_start_interrupt_receiving(void *priv, uint64_t id,
     struct usb_redir_start_interrupt_receiving_header *start_interrupt_receiving)
 {
 }
 
-static void parser_stop_interrupt_receiving(void *priv, uint64_t id,
+void parser_stop_interrupt_receiving(void *priv, uint64_t id,
     struct usb_redir_stop_interrupt_receiving_header *stop_interrupt_receiving)
 {
 }
 
-static void parser_interrupt_receiving_status(void *priv, uint64_t id,
+void parser_interrupt_receiving_status(void *priv, uint64_t id,
     struct usb_redir_interrupt_receiving_status_header *interrupt_receiving_status)
 {
 }
 
-static void parser_alloc_bulk_streams(void *priv, uint64_t id,
+void parser_alloc_bulk_streams(void *priv, uint64_t id,
     struct usb_redir_alloc_bulk_streams_header *alloc_bulk_streams)
 {
 }
 
-static void parser_free_bulk_streams(void *priv, uint64_t id,
+void parser_free_bulk_streams(void *priv, uint64_t id,
     struct usb_redir_free_bulk_streams_header *free_bulk_streams)
 {
 }
 
-static void parser_bulk_streams_status(void *priv, uint64_t id,
+void parser_bulk_streams_status(void *priv, uint64_t id,
     struct usb_redir_bulk_streams_status_header *bulk_streams_status)
 {
 }
 
-static void parser_cancel_data_packet(void *priv, uint64_t id)
+void parser_cancel_data_packet(void *priv, uint64_t id)
 {
 }
 
-static void parser_filter_reject(void *priv)
+void parser_filter_reject(void *priv)
 {
 }
 
-static void parser_filter_filter(void *priv,
+void parser_filter_filter(void *priv,
     struct usbredirfilter_rule *rules, int rules_count)
 {
 }
 
-static void dump_data(const uint8_t *data, const int len)
+void dump_data(const uint8_t *data, const int len)
 {
     int i;
 
@@ -248,7 +247,7 @@ static void dump_data(const uint8_t *data, const int len)
     log("\n");
 }
 
-static void parser_control_packet(void *priv, uint64_t id,
+void parser_control_packet(void *priv, uint64_t id,
     struct usb_redir_control_packet_header *control_packet,
     uint8_t *data, int data_len)
 {
@@ -266,7 +265,7 @@ static void parser_control_packet(void *priv, uint64_t id,
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
-static void parser_bulk_packet(void *priv, uint64_t id,
+void parser_bulk_packet(void *priv, uint64_t id,
     struct usb_redir_bulk_packet_header *bulk_packet,
     uint8_t *data, int data_len)
 {
@@ -282,7 +281,7 @@ static void parser_bulk_packet(void *priv, uint64_t id,
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
-static void parser_iso_packet(void *priv, uint64_t id,
+void parser_iso_packet(void *priv, uint64_t id,
     struct usb_redir_iso_packet_header *iso_packet,
     uint8_t *data, int data_len)
 {
@@ -295,7 +294,7 @@ static void parser_iso_packet(void *priv, uint64_t id,
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
-static void parser_interrupt_packet(void *priv, uint64_t id,
+void parser_interrupt_packet(void *priv, uint64_t id,
     struct usb_redir_interrupt_packet_header *interrupt_packet,
     uint8_t *data, int data_len)
 {
@@ -308,7 +307,7 @@ static void parser_interrupt_packet(void *priv, uint64_t id,
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
-static void parser_buffered_bulk_packet(void *priv, uint64_t id,
+void parser_buffered_bulk_packet(void *priv, uint64_t id,
     struct usb_redir_buffered_bulk_packet_header *buffered_bulk_header,
     uint8_t *data, int data_len)
 {
@@ -322,46 +321,47 @@ static void parser_buffered_bulk_packet(void *priv, uint64_t id,
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
-static void *parser_alloc_lock()
+void *parser_alloc_lock()
 {
     return nullptr;
 }
 
-static void parser_lock(void *lock)
+void parser_lock(void *lock)
 {
 }
 
-static void parser_unlock(void *lock)
+void parser_unlock(void *lock)
 {
 }
 
-static void parser_free_lock(void *lock)
+void parser_free_lock(void *lock)
 {
 }
 
-static void parser_hello(void *priv, struct usb_redir_hello_header *h)
+void parser_hello(void *priv, struct usb_redir_hello_header *h)
 {
     log("%s: %s\n", __func__, h->version);
 }
 
-static void parser_device_disconnect_ack(void *priv)
+void parser_device_disconnect_ack(void *priv)
 {
 }
 
-static void parser_start_bulk_receiving(void *priv, uint64_t id,
+void parser_start_bulk_receiving(void *priv, uint64_t id,
     struct usb_redir_start_bulk_receiving_header *start_bulk_receiving)
 {
 }
 
-static void parser_stop_bulk_receiving(void *priv, uint64_t id,
+void parser_stop_bulk_receiving(void *priv, uint64_t id,
     struct usb_redir_stop_bulk_receiving_header *stop_bulk_receiving)
 {
 }
 
-static void parser_bulk_receiving_status(void *priv, uint64_t id,
+void parser_bulk_receiving_status(void *priv, uint64_t id,
     struct usb_redir_bulk_receiving_status_header *bulk_receiving_status)
 {
 }
+}  // namespace
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
