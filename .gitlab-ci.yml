@@ -2,7 +2,7 @@ image: fedora:latest
 
 variables:
   DEPENDENCIES: >-
-    gcc clang meson ninja-build git libtool make bzip2 libusb-devel glib2-devel
+    gcc clang meson ninja-build git bzip2 libusb-devel glib2-devel
   FUZZING_DEPENDENCIES: >-
     clang libcxx-devel compiler-rt
   MINGW_DEPENDENCIES: >-
@@ -13,18 +13,6 @@ stable:
   before_script:
     - dnf install -y --nogpgcheck $DEPENDENCIES
   script:
-    - ./autogen.sh --prefix=/usr --with-tools
-    - make
-    - make check
-    - make install
-    - make distcheck
-
-    - git clean -xfd
-    - ./autogen.sh --prefix=/usr --without-tools
-    - make
-    - make check
-    - make install
-
     - meson . _build -Dfuzzing=disabled -Dtools=enabled
     - ninja -C _build
     - ninja -C _build dist
@@ -36,18 +24,7 @@ stable:
     - export CC='clang -fsanitize=fuzzer-no-link -fsanitize=address'
     - export CXX='clang++ -fsanitize=fuzzer-no-link -fsanitize=address'
 
-fuzzing_autoconf:
-  extends: .fuzzing_base
-  script:
-    - >-
-      ./autogen.sh --prefix=/usr --enable-fuzzing \
-        LIB_FUZZING_ENGINE='-fsanitize=fuzzer'
-    - make
-    - make check
-    - make install
-    - make distcheck
-
-fuzzing_meson:
+fuzzing:
   extends: .fuzzing_base
   script:
     - export LIB_FUZZING_ENGINE=-fsanitize=fuzzer
@@ -66,11 +43,6 @@ windows:
     - dnf install -y --nogpgcheck $DEPENDENCIES $MINGW_DEPENDENCIES
 
   script:
-    - ./autogen.sh --prefix=/usr --enable-tools
-    - mingw64-configure
-    - mingw64-make
-    - mingw64-make install
-
     - mkdir _win_build && cd _win_build
     - mingw64-meson -Dtools=enabled
     - ninja
