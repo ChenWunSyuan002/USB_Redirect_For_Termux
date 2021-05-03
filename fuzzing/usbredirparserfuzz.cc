@@ -23,6 +23,7 @@
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 
 #include <sys/types.h>
 #include <unistd.h>
