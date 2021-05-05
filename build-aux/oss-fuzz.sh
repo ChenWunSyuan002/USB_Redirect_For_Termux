@@ -6,12 +6,6 @@ set -eux -o pipefail
 export LC_CTYPE=C.UTF-8
 export WORK="${WORK:-${PWD}/build}"
 
-if [[ -d "${WORK:?}" ]]; then
-    find "${WORK}" -mindepth 1 -print -delete
-else
-    mkdir "$WORK"
-fi
-
 config=(
     --default-library=static
     -Dprefix="${OUT:?}"
@@ -26,6 +20,15 @@ config=(
     # Don't use "-Wl,--no-undefined"
     -Db_lundef=false
     )
+
+# Meson doesn't apply changed options without "--reconfigure" or "--wipe", but
+# those fail when the build directory is not already configured. This issue can
+# be avoided by checking for a configured build directory first.
+#
+# https://github.com/mesonbuild/meson/issues/7261
+if [[ -d "$WORK" ]] && meson introspect --projectinfo -- "$WORK"; then
+    config+=( --reconfigure )
+fi
 
 if ! meson setup "${config[@]}" -- "$WORK"; then
     cat "${WORK}/meson-logs/meson-log.txt" >&2 || :
