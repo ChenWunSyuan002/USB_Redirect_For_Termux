@@ -28,8 +28,8 @@
 #include "usbredirparser.h"
 #include "usbredirfilter.h"
 
-/* Maximum size of an individual bulk transfer */
-#define MAX_BULK_TRANSFER_SIZE (64u * 1024u)
+/* Put *some* upper limit on bulk transfer sizes */
+#define MAX_BULK_TRANSFER_SIZE (128u * 1024u * 1024u)
 
 /* Upper limit for accepted packet sizes including headers; makes the assumption
  * that no header is longer than 1kB
