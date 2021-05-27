@@ -642,6 +642,7 @@ static void usbredirhost_release(struct usbredirhost *host, int attach_drivers)
     }
 }
 
+USBREDIR_VISIBLE
 struct usbredirhost *usbredirhost_open(
     libusb_context *usb_ctx,
     libusb_device_handle *usb_dev_handle,
@@ -656,6 +657,7 @@ struct usbredirhost *usbredirhost_open(
                                   func_priv, version, verbose, flags);
 }
 
+USBREDIR_VISIBLE
 struct usbredirhost *usbredirhost_open_full(
     libusb_context *usb_ctx,
     libusb_device_handle *usb_dev_handle,
@@ -778,6 +780,7 @@ struct usbredirhost *usbredirhost_open_full(
     return host;
 }
 
+USBREDIR_VISIBLE
 void usbredirhost_close(struct usbredirhost *host)
 {
     usbredirhost_clear_device(host);
@@ -814,6 +817,7 @@ static int usbredirhost_reset_device(struct usbredirhost *host)
     return 0;
 }
 
+USBREDIR_VISIBLE
 int usbredirhost_set_device(struct usbredirhost *host,
                              libusb_device_handle *usb_dev_handle)
 {
@@ -881,21 +885,25 @@ static void usbredirhost_clear_device(struct usbredirhost *host)
     FLUSH(host);
 }
 
+USBREDIR_VISIBLE
 int usbredirhost_read_guest_data(struct usbredirhost *host)
 {
     return usbredirparser_do_read(host->parser);
 }
 
+USBREDIR_VISIBLE
 int usbredirhost_has_data_to_write(struct usbredirhost *host)
 {
     return usbredirparser_has_data_to_write(host->parser);
 }
 
+USBREDIR_VISIBLE
 int usbredirhost_write_guest_data(struct usbredirhost *host)
 {
     return usbredirparser_do_write(host->parser);
 }
 
+USBREDIR_VISIBLE
 void usbredirhost_free_write_buffer(struct usbredirhost *host, uint8_t *data)
 {
     usbredirparser_free_write_buffer(host->parser, data);
@@ -1425,6 +1433,7 @@ static void usbredirhost_log_data(struct usbredirhost *host, const char *desc,
 
 /**************************************************************************/
 
+USBREDIR_VISIBLE
 void usbredirhost_set_buffered_output_size_cb(struct usbredirhost *host,
     usbredirhost_buffered_output_size buffered_output_size_func)
 {
@@ -2530,6 +2539,7 @@ static void usbredirhost_interrupt_packet(void *priv, uint64_t id,
 
 /**************************************************************************/
 
+USBREDIR_VISIBLE
 void usbredirhost_get_guest_filter(struct usbredirhost *host,
     const struct usbredirfilter_rule **rules_ret, int *rules_count_ret)
 {
@@ -2537,6 +2547,7 @@ void usbredirhost_get_guest_filter(struct usbredirhost *host,
     *rules_count_ret = host->filter_rules_count;
 }
 
+USBREDIR_VISIBLE
 int usbredirhost_check_device_filter(const struct usbredirfilter_rule *rules,
     int rules_count, libusb_device *dev, int flags)
 {

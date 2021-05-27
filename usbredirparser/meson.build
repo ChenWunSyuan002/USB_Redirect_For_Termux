@@ -27,10 +27,11 @@ if host_machine.system() == 'windows'
 endif
 
 usbredir_parser_map_file = meson.current_source_dir() / 'usbredirparser.map'
-usbredir_parser_link_args = [
+usbredir_parser_link_args = compiler.get_supported_link_arguments([
     '-Wl,--version-script=@0@'.format(usbredir_parser_map_file),
     '-Wl,--no-undefined',
-]
+    '-Wl,-dead_strip',
+])
 
 usbredir_parser_include_directories = [
     include_directories('.'),
@@ -43,7 +44,8 @@ usbredir_parser_lib = library('usbredirparser',
     install : true,
     include_directories: usbredir_parser_include_directories,
     link_args : [usbredir_parser_link_args],
-    link_depends : usbredir_parser_map_file)
+    link_depends : usbredir_parser_map_file,
+    gnu_symbol_visibility : 'hidden')
 
 usbredir_parser_lib_dep = declare_dependency(
     link_with: usbredir_parser_lib,

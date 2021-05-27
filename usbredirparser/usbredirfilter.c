@@ -18,6 +18,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
+#include "config.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +31,7 @@
 
 #include "usbredirfilter.h"
 
+USBREDIR_VISIBLE
 int usbredirfilter_string_to_rules(
     const char *filter_str, const char *token_sep, const char *rule_sep,
     struct usbredirfilter_rule **rules_ret, int *rules_count_ret)
@@ -99,6 +101,7 @@ leave:
     return ret;
 }
 
+USBREDIR_VISIBLE
 char *usbredirfilter_rules_to_string(const struct usbredirfilter_rule *rules,
     int rules_count, const char *token_sep, const char *rule_sep)
 {
@@ -164,6 +167,7 @@ static int usbredirfilter_check1(const struct usbredirfilter_rule *rules,
     return default_allow ? 0 : -ENOENT;
 }
 
+USBREDIR_VISIBLE
 int usbredirfilter_check(
     const struct usbredirfilter_rule *rules, int rules_count,
     uint8_t device_class, uint8_t device_subclass, uint8_t device_protocol,
@@ -218,6 +222,7 @@ int usbredirfilter_check(
     return 0;
 }
 
+USBREDIR_VISIBLE
 int usbredirfilter_verify(
     const struct usbredirfilter_rule *rules, int rules_count)
 {
@@ -237,6 +242,7 @@ int usbredirfilter_verify(
     return 0;
 }
 
+USBREDIR_VISIBLE
 void usbredirfilter_print(
     const struct usbredirfilter_rule *rules, int rules_count, FILE *out)
 {

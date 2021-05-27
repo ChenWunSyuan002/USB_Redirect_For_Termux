@@ -16,10 +16,11 @@ usbredir_host_sources = [
 ]
 
 usbredir_host_map_file = meson.current_source_dir() / 'usbredirhost.map'
-usbredir_host_link_args = [
+usbredir_host_link_args = compiler.get_supported_link_arguments([
     '-Wl,--version-script=@0@'.format(usbredir_host_map_file),
     '-Wl,--no-undefined',
-]
+    '-Wl,-dead_strip',
+])
 
 libusb = 'libusb-1.0'
 libusb_version = '>= 1.0.9'
@@ -38,7 +39,8 @@ usbredir_host_lib = library('usbredirhost',
     include_directories: usbredir_host_include_directories,
     link_args : [usbredir_host_link_args],
     link_depends : usbredir_host_map_file,
-    dependencies : [libusb, usbredir_parser_lib_dep])
+    dependencies : [libusb, usbredir_parser_lib_dep],
+    gnu_symbol_visibility : 'hidden')
 
 usbredir_host_lib_dep = declare_dependency(
     link_with: usbredir_host_lib,

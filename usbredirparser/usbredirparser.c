@@ -143,6 +143,7 @@ static void usbredirparser_queue(struct usbredirparser *parser, uint32_t type,
 static int usbredirparser_caps_get_cap(struct usbredirparser_priv *parser,
     uint32_t *caps, int cap);
 
+USBREDIR_VISIBLE
 struct usbredirparser *usbredirparser_create(void)
 {
     return calloc(1, sizeof(struct usbredirparser_priv));
@@ -161,6 +162,7 @@ static void usbredirparser_verify_caps(struct usbredirparser_priv *parser,
     }
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_init(struct usbredirparser *parser_pub,
     const char *version, uint32_t *caps, int caps_len, int flags)
 {
@@ -189,6 +191,7 @@ void usbredirparser_init(struct usbredirparser *parser_pub,
                              USB_REDIR_CAPS_SIZE * sizeof(uint32_t));
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_destroy(struct usbredirparser *parser_pub)
 {
     struct usbredirparser_priv *parser =
@@ -223,11 +226,13 @@ static int usbredirparser_caps_get_cap(struct usbredirparser_priv *parser,
     }
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_caps_set_cap(uint32_t *caps, int cap)
 {
     caps[cap / 32] |= 1 << (cap % 32);
 }
 
+USBREDIR_VISIBLE
 int usbredirparser_have_peer_caps(struct usbredirparser *parser_pub)
 {
     struct usbredirparser_priv *parser =
@@ -236,6 +241,7 @@ int usbredirparser_have_peer_caps(struct usbredirparser *parser_pub)
     return parser->have_peer_caps;
 }
 
+USBREDIR_VISIBLE
 int usbredirparser_peer_has_cap(struct usbredirparser *parser_pub, int cap)
 {
     struct usbredirparser_priv *parser =
@@ -243,6 +249,7 @@ int usbredirparser_peer_has_cap(struct usbredirparser *parser_pub, int cap)
     return usbredirparser_caps_get_cap(parser, parser->peer_caps, cap);
 }
 
+USBREDIR_VISIBLE
 int usbredirparser_have_cap(struct usbredirparser *parser_pub, int cap)
 {
     struct usbredirparser_priv *parser =
@@ -943,6 +950,7 @@ static void usbredirparser_call_type_func(struct usbredirparser *parser_pub)
     }
 }
 
+USBREDIR_VISIBLE
 int usbredirparser_do_read(struct usbredirparser *parser_pub)
 {
     struct usbredirparser_priv *parser =
@@ -1056,6 +1064,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
     }
 }
 
+USBREDIR_VISIBLE
 int usbredirparser_has_data_to_write(struct usbredirparser *parser_pub)
 {
     struct usbredirparser_priv *parser =
@@ -1063,6 +1072,7 @@ int usbredirparser_has_data_to_write(struct usbredirparser *parser_pub)
     return parser->write_buf_count;
 }
 
+USBREDIR_VISIBLE
 int usbredirparser_do_write(struct usbredirparser *parser_pub)
 {
     struct usbredirparser_priv *parser =
@@ -1102,12 +1112,14 @@ int usbredirparser_do_write(struct usbredirparser *parser_pub)
     return ret;
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_free_write_buffer(struct usbredirparser *parser,
     uint8_t *data)
 {
     free(data);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_free_packet_data(struct usbredirparser *parser,
     uint8_t *data)
 {
@@ -1177,6 +1189,7 @@ static void usbredirparser_queue(struct usbredirparser *parser_pub,
     UNLOCK(parser);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_device_connect(struct usbredirparser *parser,
     struct usb_redir_device_connect_header *device_connect)
 {
@@ -1184,17 +1197,20 @@ void usbredirparser_send_device_connect(struct usbredirparser *parser,
                          NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_device_disconnect(struct usbredirparser *parser)
 {
     usbredirparser_queue(parser, usb_redir_device_disconnect, 0, NULL,
                          NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_reset(struct usbredirparser *parser)
 {
     usbredirparser_queue(parser, usb_redir_reset, 0, NULL, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_interface_info(struct usbredirparser *parser,
     struct usb_redir_interface_info_header *interface_info)
 {
@@ -1202,12 +1218,14 @@ void usbredirparser_send_interface_info(struct usbredirparser *parser,
                          NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_ep_info(struct usbredirparser *parser,
     struct usb_redir_ep_info_header *ep_info)
 {
     usbredirparser_queue(parser, usb_redir_ep_info, 0, ep_info, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_set_configuration(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_set_configuration_header *set_configuration)
@@ -1216,6 +1234,7 @@ void usbredirparser_send_set_configuration(struct usbredirparser *parser,
                          set_configuration, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_get_configuration(struct usbredirparser *parser,
     uint64_t id)
 {
@@ -1223,6 +1242,7 @@ void usbredirparser_send_get_configuration(struct usbredirparser *parser,
                          NULL, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_configuration_status(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_configuration_status_header *configuration_status)
@@ -1231,6 +1251,7 @@ void usbredirparser_send_configuration_status(struct usbredirparser *parser,
                          configuration_status, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_set_alt_setting(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_set_alt_setting_header *set_alt_setting)
@@ -1239,6 +1260,7 @@ void usbredirparser_send_set_alt_setting(struct usbredirparser *parser,
                          set_alt_setting, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_get_alt_setting(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_get_alt_setting_header *get_alt_setting)
@@ -1247,6 +1269,7 @@ void usbredirparser_send_get_alt_setting(struct usbredirparser *parser,
                          get_alt_setting, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_alt_setting_status(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_alt_setting_status_header *alt_setting_status)
@@ -1255,6 +1278,7 @@ void usbredirparser_send_alt_setting_status(struct usbredirparser *parser,
                          alt_setting_status, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_start_iso_stream(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_start_iso_stream_header *start_iso_stream)
@@ -1263,6 +1287,7 @@ void usbredirparser_send_start_iso_stream(struct usbredirparser *parser,
                          start_iso_stream, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_stop_iso_stream(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_stop_iso_stream_header *stop_iso_stream)
@@ -1271,6 +1296,7 @@ void usbredirparser_send_stop_iso_stream(struct usbredirparser *parser,
                          stop_iso_stream, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_iso_stream_status(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_iso_stream_status_header *iso_stream_status)
@@ -1279,6 +1305,7 @@ void usbredirparser_send_iso_stream_status(struct usbredirparser *parser,
                          iso_stream_status, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_start_interrupt_receiving(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_start_interrupt_receiving_header *start_interrupt_receiving)
@@ -1287,6 +1314,7 @@ void usbredirparser_send_start_interrupt_receiving(struct usbredirparser *parser
                          start_interrupt_receiving, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_stop_interrupt_receiving(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_stop_interrupt_receiving_header *stop_interrupt_receiving)
@@ -1295,6 +1323,7 @@ void usbredirparser_send_stop_interrupt_receiving(struct usbredirparser *parser,
                          stop_interrupt_receiving, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_interrupt_receiving_status(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_interrupt_receiving_status_header *interrupt_receiving_status)
@@ -1303,6 +1332,7 @@ void usbredirparser_send_interrupt_receiving_status(struct usbredirparser *parse
                          interrupt_receiving_status, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_alloc_bulk_streams(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_alloc_bulk_streams_header *alloc_bulk_streams)
@@ -1311,6 +1341,7 @@ void usbredirparser_send_alloc_bulk_streams(struct usbredirparser *parser,
                          alloc_bulk_streams, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_free_bulk_streams(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_free_bulk_streams_header *free_bulk_streams)
@@ -1319,6 +1350,7 @@ void usbredirparser_send_free_bulk_streams(struct usbredirparser *parser,
                          free_bulk_streams, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_bulk_streams_status(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_bulk_streams_status_header *bulk_streams_status)
@@ -1327,6 +1359,7 @@ void usbredirparser_send_bulk_streams_status(struct usbredirparser *parser,
                          bulk_streams_status, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_cancel_data_packet(struct usbredirparser *parser,
     uint64_t id)
 {
@@ -1334,6 +1367,7 @@ void usbredirparser_send_cancel_data_packet(struct usbredirparser *parser,
                          NULL, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_filter_reject(struct usbredirparser *parser)
 {
     if (!usbredirparser_peer_has_cap(parser, usb_redir_cap_filter))
@@ -1342,6 +1376,7 @@ void usbredirparser_send_filter_reject(struct usbredirparser *parser)
     usbredirparser_queue(parser, usb_redir_filter_reject, 0, NULL, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_filter_filter(struct usbredirparser *parser_pub,
     const struct usbredirfilter_rule *rules, int rules_count)
 {
@@ -1362,6 +1397,7 @@ void usbredirparser_send_filter_filter(struct usbredirparser *parser_pub,
     free(str);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_start_bulk_receiving(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_start_bulk_receiving_header *start_bulk_receiving)
@@ -1370,6 +1406,7 @@ void usbredirparser_send_start_bulk_receiving(struct usbredirparser *parser,
                          start_bulk_receiving, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_stop_bulk_receiving(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_stop_bulk_receiving_header *stop_bulk_receiving)
@@ -1378,6 +1415,7 @@ void usbredirparser_send_stop_bulk_receiving(struct usbredirparser *parser,
                          stop_bulk_receiving, NULL, 0);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_bulk_receiving_status(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_bulk_receiving_status_header *bulk_receiving_status)
@@ -1387,6 +1425,7 @@ void usbredirparser_send_bulk_receiving_status(struct usbredirparser *parser,
 }
 
 /* Data packets: */
+USBREDIR_VISIBLE
 void usbredirparser_send_control_packet(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_control_packet_header *control_header,
@@ -1396,6 +1435,7 @@ void usbredirparser_send_control_packet(struct usbredirparser *parser,
                          data, data_len);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_bulk_packet(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_bulk_packet_header *bulk_header,
@@ -1405,6 +1445,7 @@ void usbredirparser_send_bulk_packet(struct usbredirparser *parser,
                          data, data_len);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_iso_packet(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_iso_packet_header *iso_header,
@@ -1414,6 +1455,7 @@ void usbredirparser_send_iso_packet(struct usbredirparser *parser,
                          data, data_len);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_interrupt_packet(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_interrupt_packet_header *interrupt_header,
@@ -1423,6 +1465,7 @@ void usbredirparser_send_interrupt_packet(struct usbredirparser *parser,
                          interrupt_header, data, data_len);
 }
 
+USBREDIR_VISIBLE
 void usbredirparser_send_buffered_bulk_packet(struct usbredirparser *parser,
     uint64_t id,
     struct usb_redir_buffered_bulk_packet_header *buffered_bulk_header,
@@ -1588,6 +1631,7 @@ static int unserialize_data(struct usbredirparser_priv *parser,
     return 0;
 }
 
+USBREDIR_VISIBLE
 int usbredirparser_serialize(struct usbredirparser *parser_pub,
                              uint8_t **state_dest, int *state_len)
 {
@@ -1667,6 +1711,7 @@ int usbredirparser_serialize(struct usbredirparser *parser_pub,
     return 0;
 }
 
+USBREDIR_VISIBLE
 int usbredirparser_unserialize(struct usbredirparser *parser_pub,
                                uint8_t *state, int len)
 {

@@ -33,6 +33,19 @@ endif
 
 config = configuration_data()
 
+config.set('USBREDIR_VISIBLE', '')
+foreach visibility : [
+    '__attribute__((visibility ("default")))',
+    '__attribute__((dllexport))',
+    '__declspec(dllexport)',
+]
+    code = '@0@ int func() { return 123; }'.format(visibility)
+    if compiler.compiles(code, name : 'visibility check')
+	config.set('USBREDIR_VISIBLE', visibility)
+	break
+    endif
+endforeach
+
 #
 # write config.h
 #
