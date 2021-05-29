@@ -34,6 +34,7 @@ endif
 
 fuzz_targets = {
     'usbredirparserfuzz': [usbredir_parser_lib_dep],
+    'usbredirfilterfuzz': [usbredir_parser_lib_dep],
     }
 
 foreach target_name, deps : fuzz_targets
