@@ -77,6 +77,11 @@ int parser_write(void *priv, uint8_t *data, int count)
 {
     log("%s: %d bytes\n", __func__, count);
 
+    // Read over complete source buffer to detect buffer overflows on write
+    void *buf = malloc(count);
+    memcpy(buf, data, count);
+    free(buf);
+
     return count;
 }
 
