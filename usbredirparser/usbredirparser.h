@@ -61,7 +61,7 @@ typedef void (*usbredirparser_free_lock)(void *lock);
    type has been received.
 
    Note that the passed in packet-type-specific-header's lifetime is only
-   guarenteed to be that of the callback.
+   guaranteed to be that of the callback.
 
    Control packets: */
 typedef void (*usbredirparser_hello)(void *priv,
@@ -118,7 +118,7 @@ typedef void (*usbredirparser_bulk_receiving_status)(void *priv,
 
 /* Data packets:
 
-   Note that ownership of the the data buffer (if not NULL) is passed on to
+   Note that ownership of the data buffer (if not NULL) is passed on to
    the callback. The callback should free it by calling
    usbredirparser_free_packet_data when it is done with it. */
 typedef void (*usbredirparser_control_packet)(void *priv,
@@ -141,7 +141,7 @@ typedef void (*usbredirparser_buffered_bulk_packet)(void *priv, uint64_t id,
 /* Public part of the data allocated by usbredirparser_alloc, *never* allocate
    a usbredirparser struct yourself, it may be extended in the future to add
    callbacks for new packet types (which will then get added at the end),
-   *and* usbredirparser_alloc will also alloc some space behind it for
+   *and* usbredirparser_alloc will also allocate some space behind it for
    private data */
 struct usbredirparser {
     /* app private data passed into all callbacks as the priv argument */
@@ -230,11 +230,11 @@ int usbredirparser_have_peer_caps(struct usbredirparser *parser);
    should not be used before the hello_func callback has been called. */
 int usbredirparser_peer_has_cap(struct usbredirparser *parser, int cap);
 
-/* Call this whenever there is data ready from the otherside to parse
+/* Call this whenever there is data ready from the other side to parse.
    On an usbredirparser_read_io_error this function will continue where it
    left of the last time on the next call. On an
    usbredirparser_read_parse_error it will skip to the next packet (*).
-   *) As determined by the faulty's package headers length field */
+   *) As determined by the faulty package's headers length field */
 enum {
     usbredirparser_read_io_error    = -1,
     usbredirparser_read_parse_error = -2,
@@ -261,7 +261,7 @@ void usbredirparser_free_write_buffer(struct usbredirparser *parser,
 void usbredirparser_free_packet_data(struct usbredirparser *parser,
     uint8_t *data);
 
-/* Functions to marshall and queue a packet for sending to its peer. Note:
+/* Functions to marshal and queue a packet for sending to its peer. Note:
    1) it will not be actually send until usbredirparser_do_write is called
    2) if their is not enough memory for buffers the packet will be dropped
       (and an error message will be logged */

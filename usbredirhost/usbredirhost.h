@@ -111,7 +111,7 @@ void usbredirhost_close(struct usbredirhost *host);
    device handle. This means that if you are using the same libusb context
    for other purposes your transfer complete callbacks may get called!
 
-   This function returns a usbredirproto.h status code (ie usb_redir_success)
+   This function returns a usbredirproto.h status code (i.e. usb_redir_success)
 */
 int usbredirhost_set_device(struct usbredirhost *host,
                             libusb_device_handle *usb_dev_handle);

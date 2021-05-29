@@ -45,11 +45,11 @@ struct usbredirfilter_rule {
    And the rules are themselves are separated by the rule_sep character, ie:
    <rule1>|<rule2>|<rule3>
 
-   Assuming "|" as the rule_sep character. Note that with the seperator used
+   Assuming "|" as the rule_sep character. Note that with the separator used
    in this example the format matches the format as written by the RHEV-M USB
    filter editor tool.
 
-   Note that the seperators must be single character strings!
+   Note that the separators must be single character strings!
 
    On success the rules get returned in rules_ret and rules_count_ret, the
    returned rules array should be freed with free() when the caller is done
@@ -66,7 +66,7 @@ int usbredirfilter_string_to_rules(
    usbredirfilter_string_to_rules(); The returned string must be free()-ed
    by the caller when it is done with it.
 
-   Return value: The string on sucess, or NULL if the rules fail verification,
+   Return value: The string on success, or NULL if the rules fail verification,
       or when allocating the string fails.
 */
 char *usbredirfilter_rules_to_string(const struct usbredirfilter_rule *rules,
@@ -91,7 +91,7 @@ char *usbredirfilter_rules_to_string(const struct usbredirfilter_rule *rules,
    - If the usbredirfilter_fl_dont_skip_non_boot_hid flag is not passed, then
      for devices with more than 1 interface and an interface with an interface
      class of 0x03, an interface subclass of 0x00 and an interface protocol
-     of 0x00, the check is skipped for that interface. This allows to skip ie
+     of 0x00, the check is skipped for that interface. This allows to skip i.e.
      checking the interface for volume buttons on some usbaudio class devices.
 
    If the result of all (not skipped) passes is allow, then 0 will be returned,
