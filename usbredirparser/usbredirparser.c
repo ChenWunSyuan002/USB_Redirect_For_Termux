@@ -20,6 +20,7 @@
 */
 #include "config.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -293,7 +294,6 @@ static void usbredirparser_handle_hello(struct usbredirparser *parser_pub,
     }
     usbredirparser_verify_caps(parser, parser->peer_caps, "peer");
     parser->have_peer_caps = 1;
-    free(data);
 
     INFO("Peer version: %s, using %d-bits ids", buf,
          usbredirparser_using_32bits_ids(parser_pub) ? 32 : 64);
@@ -786,7 +786,8 @@ static int usbredirparser_verify_type_header(
     return 1; /* Verify ok */
 }
 
-static void usbredirparser_call_type_func(struct usbredirparser *parser_pub)
+static void usbredirparser_call_type_func(struct usbredirparser *parser_pub,
+    bool *data_ownership_transferred)
 {
     struct usbredirparser_priv *parser =
         (struct usbredirparser_priv *)parser_pub;
@@ -925,26 +926,31 @@ static void usbredirparser_call_type_func(struct usbredirparser *parser_pub)
             parser->type_header);
         break;
     case usb_redir_control_packet:
+        *data_ownership_transferred = true;
         parser->callb.control_packet_func(parser->callb.priv, id,
             (struct usb_redir_control_packet_header *)parser->type_header,
             parser->data, parser->data_len);
         break;
     case usb_redir_bulk_packet:
+        *data_ownership_transferred = true;
         parser->callb.bulk_packet_func(parser->callb.priv, id,
             (struct usb_redir_bulk_packet_header *)parser->type_header,
             parser->data, parser->data_len);
         break;
     case usb_redir_iso_packet:
+        *data_ownership_transferred = true;
         parser->callb.iso_packet_func(parser->callb.priv, id,
             (struct usb_redir_iso_packet_header *)parser->type_header,
             parser->data, parser->data_len);
         break;
     case usb_redir_interrupt_packet:
+        *data_ownership_transferred = true;
         parser->callb.interrupt_packet_func(parser->callb.priv, id,
             (struct usb_redir_interrupt_packet_header *)parser->type_header,
             parser->data, parser->data_len);
         break;
     case usb_redir_buffered_bulk_packet:
+        *data_ownership_transferred = true;
         parser->callb.buffered_bulk_packet_func(parser->callb.priv, id,
           (struct usb_redir_buffered_bulk_packet_header *)parser->type_header,
           parser->data, parser->data_len);
@@ -958,6 +964,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
     struct usbredirparser_priv *parser =
         (struct usbredirparser_priv *)parser_pub;
     int r, header_len, type_header_len, data_len;
+    bool data_ownership_transferred;
     uint8_t *dest;
 
     header_len = usbredirparser_get_header_len(parser_pub);
@@ -1049,8 +1056,14 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                 r = usbredirparser_verify_type_header(parser_pub,
                          parser->header.type, parser->type_header,
                          parser->data, parser->data_len, 0);
-                if (r)
-                    usbredirparser_call_type_func(parser_pub);
+                data_ownership_transferred = false;
+                if (r) {
+                    usbredirparser_call_type_func(parser_pub,
+                                                  &data_ownership_transferred);
+                }
+                if (!data_ownership_transferred) {
+                    free(parser->data);
+                }
                 parser->header_read = 0;
                 parser->type_header_len  = 0;
                 parser->type_header_read = 0;
