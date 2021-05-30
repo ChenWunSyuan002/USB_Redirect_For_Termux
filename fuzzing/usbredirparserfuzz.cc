@@ -361,6 +361,50 @@ void parser_bulk_receiving_status(void *priv, uint64_t id,
     struct usb_redir_bulk_receiving_status_header *bulk_receiving_status)
 {
 }
+
+int try_unserialize(struct usbredirparser *parser, FuzzedDataProvider *fdp)
+{
+    std::vector<uint8_t> state;
+    size_t len = fdp->ConsumeIntegralInRange<size_t>(1, 64 * 1024);
+
+    state.reserve(len);
+
+    if (len >= 4) {
+        // Could also move USBREDIRPARSER_SERIALIZE_MAGIC after moving it to
+        // a shared header.
+        state.insert(state.end(), {'U', 'R', 'P', '1'});
+        len -= 4;
+    }
+
+    if (len > 0) {
+        const std::vector<uint8_t> payload{fdp->ConsumeBytes<uint8_t>(len)};
+
+        state.insert(state.end(), payload.cbegin(), payload.cend());
+    }
+
+    if (state.empty()) {
+        return 0;
+    }
+
+    state.shrink_to_fit();
+
+    return usbredirparser_unserialize(parser, &state[0], state.size());
+}
+
+int try_serialize(struct usbredirparser *parser)
+{
+    uint8_t *state = nullptr;
+    int len = 0;
+    int ret;
+
+    ret = usbredirparser_serialize(parser, &state, &len);
+
+    if (ret == 0) {
+        free(state);
+    }
+
+    return ret;
+}
 }  // namespace
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
@@ -426,8 +470,16 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     usbredirparser_init(parser.get(), "fuzzer", caps.data(), caps.size(),
                         init_flags);
 
+    if (fdp->ConsumeBool() && try_unserialize(parser.get(), fdp.get()) != 0) {
+        goto out;
+    }
+
     while (fdp->remaining_bytes() > 0 ||
            usbredirparser_has_data_to_write(parser.get())) {
+        if (fdp->ConsumeBool() && try_serialize(parser.get()) != 0) {
+            goto out;
+        }
+
         if (fdp->remaining_bytes() > 0) {
             ret = usbredirparser_do_read(parser.get());
 
@@ -440,6 +492,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
                 goto out;
             }
 
+            if (fdp->ConsumeBool() && try_serialize(parser.get()) != 0) {
+                goto out;
+            }
         }
 
         while (usbredirparser_has_data_to_write(parser.get())) {
