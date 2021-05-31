@@ -62,15 +62,7 @@ int parser_read(void *priv, uint8_t *data, int count)
 {
     log("%s: %d bytes\n", __func__, count);
 
-    // TODO: Switch to FuzzedDataProvider::ConsumeData once Clang 11 and newer
-    // can be required
-    const std::vector<uint8_t> buf{fdp->ConsumeBytes<uint8_t>(count)};
-
-    count = std::min<size_t>(count, buf.size());
-
-    memcpy(data, buf.data(), count);
-
-    return count;
+    return fdp->ConsumeData(data, count);
 }
 
 int parser_write(void *priv, uint8_t *data, int count)
