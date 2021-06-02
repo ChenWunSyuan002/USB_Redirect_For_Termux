@@ -30,6 +30,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
+#include "usbredirfilter.h"
 #include "usbredirparser.h"
 
 namespace {
@@ -228,6 +229,7 @@ void parser_filter_reject(void *priv)
 void parser_filter_filter(void *priv,
     struct usbredirfilter_rule *rules, int rules_count)
 {
+    usbredirfilter_free(rules);
 }
 
 void dump_data(const uint8_t *data, const int len)
