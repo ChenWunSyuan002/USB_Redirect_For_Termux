@@ -524,7 +524,7 @@ static int usbredirparser_get_type_header_len(
 
 /* Note this function only checks if extra data is allowed for the
    packet type being read at all, a check if it is actually allowed
-   given the direction of the packet + ep is done in _erify_type_header */
+   given the direction of the packet + ep is done in _verify_type_header */
 static int usbredirparser_expect_extra_data(struct usbredirparser_priv *parser)
 {
     switch (parser->header.type) {
