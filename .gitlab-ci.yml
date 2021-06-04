@@ -2,7 +2,7 @@ image: fedora:latest
 
 variables:
   DEPENDENCIES: >-
-    gcc clang meson ninja-build git bzip2 libusb-devel glib2-devel
+    gcc clang meson ninja-build valgrind git bzip2 libusb-devel glib2-devel
   FUZZING_DEPENDENCIES: >-
     clang libcxx-devel compiler-rt
   MINGW_DEPENDENCIES: >-
@@ -14,8 +14,11 @@ stable:
     - dnf install -y --nogpgcheck $DEPENDENCIES
   script:
     - meson . _build -Dfuzzing=disabled -Dtools=enabled
-    - ninja -C _build
-    - ninja -C _build dist
+    - cd _build
+    - meson compile
+    - meson test
+    - meson test --wrap='valgrind --leak-check=full --error-exitcode=1'
+    - meson dist
 
 .fuzzing_base:
   resource_group: fuzzing
