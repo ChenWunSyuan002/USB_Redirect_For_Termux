@@ -32,7 +32,7 @@ struct usbredirfilter_rule {
     int device_class;       /* 0-255, -1 to match any class */
     int vendor_id;          /* 0-65535, -1 to match any id */
     int product_id;         /* 0-65535, -1 to match any id */
-    int device_version_bcd; /* 0-255, -1 to match any version */
+    int device_version_bcd; /* 0-65535, -1 to match any version */
     int allow;              /* 0: deny redir for this device, non 0: allow */
 };
 
