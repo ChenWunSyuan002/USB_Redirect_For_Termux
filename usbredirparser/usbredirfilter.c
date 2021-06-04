@@ -51,11 +51,13 @@ int usbredirfilter_string_to_rules(
        empty rule strings in the set. */
     r = filter_str;
     rules_count = 0;
-    while (r) {
-        r = strchr(r, rule_sep[0]);
-        if (r)
-            r++;
+    for (;;) {
+        r += strspn(r, rule_sep);
+        if (!*r) {
+            break;
+        }
         rules_count++;
+        r += strcspn(r, rule_sep);
     }
 
     rules = calloc(rules_count, sizeof(struct usbredirfilter_rule));

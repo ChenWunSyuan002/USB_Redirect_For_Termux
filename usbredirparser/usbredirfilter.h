@@ -40,16 +40,16 @@ struct usbredirfilter_rule {
 
    Where each rule has the form of:
    <class>,<vendor>,<product>,<version>,<allow>
-   Assuming "," as the specified token_sep character.
+   Assuming "," as the specified token_sep character set.
 
-   And the rules are themselves are separated by the rule_sep character, ie:
+   And the rules are themselves are separated by any rule_sep characters, ie:
    <rule1>|<rule2>|<rule3>
 
-   Assuming "|" as the rule_sep character. Note that with the separator used
-   in this example the format matches the format as written by the RHEV-M USB
-   filter editor tool.
+   Assuming "|" as the rule_sep character set. Note that with the separator
+   used in this example the format matches the format as written by the RHEV-M
+   USB filter editor tool.
 
-   Note that the separators must be single character strings!
+   The separators are used as strtok use separators.
 
    On success the rules get returned in rules_ret and rules_count_ret, the
    returned rules array should be freed with free() when the caller is done
