@@ -12,9 +12,14 @@ summary_info = {'prefix': get_option('prefix')}
 usbredir_include_root_dir = include_directories('.')
 
 cc_flags = [
-    '-Wp,-D_FORTIFY_SOURCE=2',
     '--param=ssp-buffer-size=4',
 ]
+if host_machine.system() != 'windows'
+    cc_flags += [
+	'-Wp,-D_FORTIFY_SOURCE=2',
+	'-fstack-protector',
+    ]
+endif
 
 # Check if we are building from .git
 git = run_command('test', '-d', '.git').returncode() == 0
@@ -26,10 +31,6 @@ endif
 compiler = meson.get_compiler('c')
 supported_cc_flags = compiler.get_supported_arguments(cc_flags)
 add_project_arguments(supported_cc_flags, language: 'c')
-
-if host_machine.system() != 'windows'
-    add_project_arguments('-fstack-protector', language: 'c')
-endif
 
 config = configuration_data()
 
