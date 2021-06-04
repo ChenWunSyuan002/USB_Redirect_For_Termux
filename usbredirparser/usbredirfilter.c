@@ -138,7 +138,10 @@ char *usbredirfilter_rules_to_string(const struct usbredirfilter_rule *rules,
         else
             p += sprintf(p, "-1%c", *token_sep);
 
-        p += sprintf(p, "%d%c", rules[i].allow ? 1:0, *rule_sep);
+        p += sprintf(p, "%d", rules[i].allow ? 1:0);
+        if (i < rules_count - 1) {
+            p += sprintf(p, "%c", *rule_sep);
+        }
     }
 
     return str;
