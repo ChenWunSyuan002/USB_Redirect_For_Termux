@@ -72,20 +72,30 @@ test_verify_rules_good(void)
     struct {
         int nrules;
         const char *filter;
+        const char *expected_serialized;
     } test_data[] = {
-        { 1, "0x03,-1,-1,-1,0" },
-        { 2, "0x03,-1,-1,-1,0|-1,-1,-1,-1,1" },
-        { 2, "|0x03,-1,-1,-1,0|-1,-1,-1,-1,1|" }, /* Ignores trailing rule_sep */
-        { 2, "0x03,-1,-1,-1,0|||-1,-1,-1,-1,1" }, /* Ignores empty rules */
+        { 1, "0x03,-1,-1,-1,0", "0x03,-1,-1,-1,0" },
+        { 2, "0x03,-1,-1,-1,0|-1,-1,-1,-1,1", "0x03,-1,-1,-1,0|-1,-1,-1,-1,1"},
+        /* Ignores trailing rule_sep */
+        { 2,  "|0x03,-1,-1,-1,0|-1,-1,-1,-1,1|", "0x03,-1,-1,-1,0|-1,-1,-1,-1,1" },
+        /* Ignores empty rules */
+        { 2,  "0x03,-1,-1,-1,0|||-1,-1,-1,-1,1", "0x03,-1,-1,-1,0|-1,-1,-1,-1,1" },
+        /* Several trailing rule_sep and empty rules */
+        { 2,  "||||0x03,-1,-1,-1,0|||-1,-1,-1,-1,1||||", "0x03,-1,-1,-1,0|-1,-1,-1,-1,1" },
     };
 
     for (i = 0; i < G_N_ELEMENTS (test_data); i++) {
         int retval, count = 0;
+        char *filter;
         struct usbredirfilter_rule *rules = NULL;
 
         retval = usbredirfilter_string_to_rules(test_data[i].filter, ",", "|", &rules, &count);
         g_assert_cmpint(retval, ==, 0);
         g_assert_cmpint(count, ==, test_data[i].nrules);
+
+        filter = usbredirfilter_rules_to_string(rules, count, ",", "|");
+        g_assert_cmpstr(test_data[i].expected_serialized, ==, filter);
+        free(filter);
         free(rules);
     }
 }
