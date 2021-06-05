@@ -143,6 +143,7 @@ char *usbredirfilter_rules_to_string(const struct usbredirfilter_rule *rules,
             p += sprintf(p, "%c", *rule_sep);
         }
     }
+    *p = '\0';
 
     return str;
 }
