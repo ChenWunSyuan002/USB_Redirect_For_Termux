@@ -51,10 +51,10 @@ glibc_strtok_r (char *s, const char *delim, char **save_ptr)
 
   /* Find the end of the token.  */
   token = s;
-  s = strpbrk (token, delim);
-  if (s == NULL)
+  s += strcspn (token, delim);
+  if (*s == '\0')
     /* This token finishes the string.  */
-    *save_ptr = strchr (token, '\0');
+    *save_ptr = s;
   else
     {
       /* Terminate the token and make *SAVE_PTR point past it.  */
