@@ -284,3 +284,10 @@ void usbredirfilter_print(
                 product, version, rules[i].allow ? "Allow":"Block");
     }
 }
+
+USBREDIR_VISIBLE
+void usbredirfilter_free(void *ptr)
+{
+    /* for compatibility with 0.10.0 and older this MUST call free() */
+    free(ptr);
+}

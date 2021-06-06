@@ -120,8 +120,8 @@ test_verify_rules_good(void)
         filter = usbredirfilter_rules_to_string(rules, count, token_sep, rule_sep);
         g_assert_nonnull(filter);
         g_assert_cmpstr(expected, ==, filter);
-        free(filter);
-        free(rules);
+        usbredirfilter_free(filter);
+        usbredirfilter_free(rules);
     }
 }
 

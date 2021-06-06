@@ -53,4 +53,10 @@ global:
 local:
 *;
 };
+
+USBREDIRPARSER_0.10.0 {
+global:
+    usbredirfilter_free;
+} USBREDIRPARSER_0.8.0;
+
 # .... define new API here using predicted next version number ....

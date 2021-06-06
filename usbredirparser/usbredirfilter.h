@@ -52,8 +52,8 @@ struct usbredirfilter_rule {
    The separators are used as strtok use separators.
 
    On success the rules get returned in rules_ret and rules_count_ret, the
-   returned rules array should be freed with free() when the caller is done
-   with it.
+   returned rules array should be freed with usbredirfilter_free() when the
+   caller is done with it.
 
    Return value: 0 on success, -ENOMEM when allocating the rules array fails,
        or -EINVAL when there is on parsing error.
@@ -63,8 +63,8 @@ int usbredirfilter_string_to_rules(
     struct usbredirfilter_rule **rules_ret, int *rules_count_ret);
 
 /* Convert a set of rules back to a string suitable for passing to
-   usbredirfilter_string_to_rules(); The returned string must be free()-ed
-   by the caller when it is done with it.
+   usbredirfilter_string_to_rules(); The returned string must be
+   usbredirfilter_free()-ed by the caller when it is done with it.
 
    Return value: The string on success, or NULL if the rules fail verification,
       or when allocating the string fails.
@@ -132,6 +132,9 @@ int usbredirfilter_verify(
 /* Print the passed in rules to FILE out in human readable format */
 void usbredirfilter_print(
     const struct usbredirfilter_rule *rules, int rules_count, FILE *out);
+
+/* Free memory allocated by the library and returned */
+void usbredirfilter_free(void *ptr);
 
 #ifdef __cplusplus
 }
