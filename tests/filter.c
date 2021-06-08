@@ -22,106 +22,207 @@
 
 #include "usbredirfilter.h"
 
+struct test {
+    const char *name;
+    const char *filter;
+    const char *token_sep;
+    const char *rule_sep;
+
+    int want_retval;
+    int want_nrules;
+    const char *want_serialized;
+};
+
+static const struct test test_cases[] = {
+    {
+        .name = "empty filter",
+        .filter = "",
+    },
+    {
+        .name = "separators only",
+        .filter = "|||",
+        .want_serialized = "",
+    },
+    {
+        .name = "one rule",
+        .filter = "0x03,-1,-1,-1,0",
+        .want_nrules = 1,
+    },
+    {
+        .name = "two rules",
+        .filter = "0x03,-1,-1,-1,0|-1,-1,-1,-1,1",
+        .want_nrules = 2,
+    },
+    {
+        .name = "ignore trailing rule_sep",
+        .filter = "|0x03,-1,-1,-1,0|-1,-1,-1,-1,1|",
+        .want_serialized = "0x03,-1,-1,-1,0|-1,-1,-1,-1,1",
+        .want_nrules = 2,
+    },
+    {
+        .name = "ignores empty rules",
+        .filter = "0x03,-1,-1,-1,0|||-1,-1,-1,-1,1",
+        .want_serialized = "0x03,-1,-1,-1,0|-1,-1,-1,-1,1",
+        .want_nrules = 2,
+    },
+    {
+        .name = "several trailing rule_sep and empty rules",
+        .filter = "||||0x03,-1,-1,-1,0|||-1,-1,-1,-1,1||||",
+        .want_serialized = "0x03,-1,-1,-1,0|-1,-1,-1,-1,1",
+        .want_nrules = 2,
+    },
+    {
+        .name = "change rule separator using multiple characters",
+        .filter = "0x03,-1,-1,-1,0",
+        .want_nrules = 1,
+        .token_sep = ",;",
+        .rule_sep = " \t\n",
+    },
+    {
+        .name = "mix of different separators",
+        .filter = "\t 0x03,-1;-1;-1,0\n\n",
+        .want_serialized = "0x03,-1,-1,-1,0",
+        .want_nrules = 1,
+        .token_sep = ",;",
+        .rule_sep = " \t\n",
+    },
+    {
+        .name = "multiple rules, separators not the first character",
+        .filter = "\n\t0x03;-1,-1,-1,0\n\n-1,-1,-1;-1;1",
+        .want_serialized = "0x03,-1,-1,-1,0 -1,-1,-1,-1,1",
+        .want_nrules = 2,
+        .token_sep = ",;",
+        .rule_sep = " \t\n",
+    },
+    {
+        .name = "upper limit on class",
+        .filter = "0x100,-1,-1,-1,0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "lower limit on class",
+        .filter = "-2,-1,-1,-1,0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "upper limit on vendor",
+        .filter = "0x03,,0x10000-1,-1,0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "lower limit on vendor",
+        .filter = "0x03,-2,-1,-1,0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "upper limit on product",
+        .filter = "0x03,-1,0x10000-1,,0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "lower limit on product",
+        .filter = "0x03,-1,-2,-1,0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "upper limit on bcd",
+        .filter = "0x03,-1,-1,0x10000,0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "lower limit on bcd",
+        .filter = "0x03,-1,-1,-2,0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "extra argument",
+        .filter = "0x03,-1,-1,-1,0,1",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "missing argument",
+        .filter = "0x03,-1,-1,-1",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "missing value in argument",
+        .filter = "0x03,-1,-1,,-1",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "letter as value in argument (1)",
+        .filter = "0x03,-1,-1,a,-1",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "number sign as value in argument (2)",
+        .filter = "0x03,-1,-1,#,-1",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "space as value in argument (3)",
+        .filter = "0x03,-1,-1, ,-1",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "invalid token_sep",
+        .filter = "0x03;-1;-1;-1;0",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "invalid rule_sep",
+        .filter = "0x03,-1,-1,-1,0;-1,-1,-1,-1,1",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "bad rule in many",
+        .filter = "0x03,-1,-1,-1,0|3|-1,-1,-1,-1,1",
+        .want_retval = -EINVAL,
+    },
+};
+
 static void
-test_verify_rules_bad(void)
+test_check(gconstpointer private)
 {
-    int i;
-    const char * const filters[] = {
-        /* Check upper and lower limits */
-        "0x100,-1,-1,-1,0", /* class */
-        "-2,-1,-1,-1,0",
-        "0x03,,0x10000-1,-1,0", /* vendor */
-        "0x03,-2,-1,-1,0",
-        "0x03,-1,0x10000-1,,0", /* product */
-        "0x03,-1,-2,-1,0",
-        "0x03,-1,-1,0x10000,0", /* bcd */
-        "0x03,-1,-1,-2,0",
-        /* Extra argument */
-        "0x03,-1,-1,-1,0,1",
-        /* Missing argument */
-        "0x03,-1,-1,-1",
-        /* Missing value in argument */
-        "0x03,-1,-1,,-1",
-        /* Bad char as value in argument (1) */
-        "0x03,-1,-1,a,-1",
-        /* Bad char as value in argument (2) */
-        "0x03,-1,-1,#,-1",
-        /* Bad char as value in argument (3) */
-        "0x03,-1,-1, ,-1",
-        /* Invalid token_sep */
-        "0x03;-1;-1;-1;0",
-        /* Invalid rule_sep */
-        "0x03,-1,-1,-1,0;-1,-1,-1,-1,1",
-        /* Bad rule in many */
-        "0x03,-1,-1,-1,0|3|-1,-1,-1,-1,1",
-    };
+    const struct test *const data = private;
+    int retval, count = INT_MIN;
+    struct usbredirfilter_rule *rules = NULL;
+    const char *token_sep = data->token_sep ? data->token_sep : ",";
+    const char *rule_sep = data->rule_sep ? data->rule_sep : "|";
 
-    for (i = 0; i < G_N_ELEMENTS (filters); i++) {
-        int retval, count = 0;
-        struct usbredirfilter_rule *rules = NULL;
+    char *const quoted_filter = g_strescape(data->filter, NULL);
+    g_test_queue_free(quoted_filter);
 
-        retval = usbredirfilter_string_to_rules(filters[i], ",", "|", &rules, &count);
-        g_assert_cmpint(retval, ==, -EINVAL);
-        g_assert_null(rules);
+    g_test_message("Filter: %s", quoted_filter);
+
+    retval = usbredirfilter_string_to_rules(data->filter, token_sep, rule_sep,
+        &rules, &count);
+    g_assert_cmpint(retval, ==, data->want_retval);
+
+    if (retval == 0) {
+        const char *const serialized =
+            data->want_serialized ? data->want_serialized : data->filter;
+        char *filter;
+
+        g_assert_cmpint(count, ==, data->want_nrules);
+
+        filter = usbredirfilter_rules_to_string(rules, count, token_sep,
+            rule_sep);
+        g_assert_nonnull(filter);
+        g_assert_cmpstr(serialized, ==, filter);
+        usbredirfilter_free(filter);
     }
+
+    usbredirfilter_free(rules);
 }
 
 static void
-test_verify_rules_good(void)
+add_tests(const char *prefix, const struct test items[], int count)
 {
-    int i;
-    static const struct test {
-        int nrules;
-        const char *filter;
-        const char *expected_serialized;
-        const char *token_sep;
-        const char *rule_sep;
-    } test_data[] = {
-        { 0, "" },
-        { 0, "|||", "" },
-        { 1, "0x03,-1,-1,-1,0" },
-        { 2, "0x03,-1,-1,-1,0|-1,-1,-1,-1,1" },
-        /* Ignores trailing rule_sep */
-        { 2,  "|0x03,-1,-1,-1,0|-1,-1,-1,-1,1|", "0x03,-1,-1,-1,0|-1,-1,-1,-1,1" },
-        /* Ignores empty rules */
-        { 2,  "0x03,-1,-1,-1,0|||-1,-1,-1,-1,1", "0x03,-1,-1,-1,0|-1,-1,-1,-1,1" },
-        /* Several trailing rule_sep and empty rules */
-        { 2,  "||||0x03,-1,-1,-1,0|||-1,-1,-1,-1,1||||", "0x03,-1,-1,-1,0|-1,-1,-1,-1,1" },
-        /* Change rule separator using multiple characters */
-        { 1, "0x03,-1,-1,-1,0", NULL, ",;", " \t\n" },
-        /* Mix of different separators */
-        { 1, "\t 0x03,-1;-1;-1,0\n\n", "0x03,-1,-1,-1,0" },
-        /* Multiple rules, separators not the first charater */
-        { 2, "\n\t0x03;-1,-1,-1,0\n\n-1,-1,-1;-1;1", "0x03,-1,-1,-1,0 -1,-1,-1,-1,1" },
-    };
-    const char *token_sep = ",";
-    const char *rule_sep = "|";
-
-    for (i = 0; i < G_N_ELEMENTS (test_data); i++) {
-        const struct test *const data = &test_data[i];
-        int retval, count = 0;
-        char *filter;
-        struct usbredirfilter_rule *rules = NULL;
-        const char *const expected =
-            data->expected_serialized ? data->expected_serialized : data->filter;
-
-        if (data->token_sep) {
-            token_sep = data->token_sep;
-        }
-        if (data->rule_sep) {
-            rule_sep = data->rule_sep;
-        }
-
-        retval = usbredirfilter_string_to_rules(data->filter, token_sep, rule_sep, &rules, &count);
-        g_assert_cmpint(retval, ==, 0);
-        g_assert_cmpint(count, ==, data->nrules);
-
-
-        filter = usbredirfilter_rules_to_string(rules, count, token_sep, rule_sep);
-        g_assert_nonnull(filter);
-        g_assert_cmpstr(expected, ==, filter);
-        usbredirfilter_free(filter);
-        usbredirfilter_free(rules);
+    for (int i = 0; i < count; i++) {
+        char *name = g_strdup_printf("%s/#%d/%s", prefix, i, items[i].name);
+        g_test_add_data_func(name, (gconstpointer)&items[i], &test_check);
+        g_free(name);
     }
 }
 
@@ -131,8 +232,7 @@ main(int argc, char **argv)
     setlocale(LC_ALL, "");
     g_test_init(&argc, &argv, NULL);
 
-    g_test_add_func("/filter/rules/good", test_verify_rules_good);
-    g_test_add_func("/filter/rules/bad", test_verify_rules_bad);
+    add_tests("/filter/rules", test_cases, G_N_ELEMENTS(test_cases));
 
     return g_test_run();
 }
