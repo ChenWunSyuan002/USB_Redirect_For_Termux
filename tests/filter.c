@@ -179,6 +179,18 @@ static const struct test test_cases[] = {
         .filter = "0x03,-1,-1,-1,0|3|-1,-1,-1,-1,1",
         .want_retval = -EINVAL,
     },
+    {
+        .name = "empty token separator",
+        .filter = "0x03,-1,-1,-1,0",
+        .token_sep = "",
+        .want_retval = -EINVAL,
+    },
+    {
+        .name = "empty rule separator",
+        .filter = "0x03,-1,-1,-1,0",
+        .rule_sep = "",
+        .want_retval = -EINVAL,
+    },
 };
 
 static void

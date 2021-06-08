@@ -42,6 +42,10 @@ int usbredirfilter_string_to_rules(
     char *buf = NULL;
     const char *r;
 
+    if (strlen(token_sep) == 0 || strlen(rule_sep) == 0) {
+        return -EINVAL;
+    }
+
     *rules_ret = NULL;
     *rules_count_ret = 0;
 
@@ -112,6 +116,10 @@ char *usbredirfilter_rules_to_string(const struct usbredirfilter_rule *rules,
 
     if (usbredirfilter_verify(rules, rules_count))
         return NULL;
+
+    if (strlen(token_sep) == 0 || strlen(rule_sep) == 0) {
+        return NULL;
+    }
 
     /* We need 28 bytes per rule in the worst case */
     str = malloc(28 * rules_count + 1);
