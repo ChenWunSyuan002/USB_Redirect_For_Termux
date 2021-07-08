@@ -420,11 +420,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         cap = fdp->ConsumeIntegral<decltype(caps)::value_type>();
     }
 
-    int init_flags = 0;
-
-    if (fdp->ConsumeBool()) {
-        init_flags |= usbredirparser_fl_usb_host;
-    }
+    const int init_flags = fdp->ConsumeIntegral<uint8_t>() &
+        (usbredirparser_fl_usb_host | usbredirparser_fl_no_hello);
 
     usbredirparser_init(parser.get(), "fuzzer", caps.data(), caps.size(),
                         init_flags);
