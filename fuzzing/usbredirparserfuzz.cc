@@ -366,7 +366,6 @@ void parser_bulk_receiving_status(void *priv, uint64_t id,
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     std::array<uint32_t, USB_REDIR_CAPS_SIZE> caps = {0};
-    int status = 0;
     int ret;
 
     fdp = std::make_unique<FuzzedDataProvider>(data, size);
@@ -434,7 +433,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         ret = usbredirparser_do_read(parser.get());
         if (ret != 0) {
             log("usbredirparser_do_read failed: %d\n", ret);
-            status = 1;
             goto out;
         }
 
@@ -442,7 +440,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             ret = usbredirparser_do_write(parser.get());
             if (ret != 0) {
                 log("usbredirparser_do_write failed: %d\n", ret);
-                status = 1;
                 goto out;
             }
         }
@@ -451,7 +448,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 out:
     parser.reset();
 
-    return status;
+    return 0;
 }
 
 /* vim: set sw=4 sts=4 et : */
