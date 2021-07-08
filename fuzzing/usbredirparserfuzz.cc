@@ -430,15 +430,21 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
            usbredirparser_has_data_to_write(parser.get())) {
         if (fdp->remaining_bytes() > 0) {
             ret = usbredirparser_do_read(parser.get());
-            if (ret != 0) {
+
+            switch (ret) {
+            case usbredirparser_read_parse_error:
+                // Keep reading
+                break;
+            default:
                 log("usbredirparser_do_read failed: %d\n", ret);
                 goto out;
             }
+
         }
 
         while (usbredirparser_has_data_to_write(parser.get())) {
             ret = usbredirparser_do_write(parser.get());
-            if (ret != 0) {
+            if (ret < 0) {
                 log("usbredirparser_do_write failed: %d\n", ret);
                 goto out;
             }
