@@ -1013,21 +1013,21 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                           parser->header.type);
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
-                    return -2;
+                    return usbredirparser_read_parse_error;
                 }
                 /* This should never happen */
                 if (type_header_len > sizeof(parser->type_header)) {
                     ERROR("error type specific header buffer too small, please report!!");
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
-                    return -2;
+                    return usbredirparser_read_parse_error;
                 }
                 if (parser->header.length > MAX_PACKET_SIZE) {
                     ERROR("packet length of %d larger than permitted %d bytes",
                           parser->header.length, MAX_PACKET_SIZE);
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
-                    return -2;
+                    return usbredirparser_read_parse_error;
                 }
                 if ((int)parser->header.length < type_header_len ||
                     ((int)parser->header.length > type_header_len &&
@@ -1036,7 +1036,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                           parser->header.type, parser->header.length);
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
-                    return -2;
+                    return usbredirparser_read_parse_error;
                 }
                 data_len = parser->header.length - type_header_len;
                 if (data_len) {
@@ -1045,7 +1045,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                         ERROR("Out of memory allocating data buffer");
                         parser->to_skip = parser->header.length;
                         parser->header_read = 0;
-                        return -2;
+                        return usbredirparser_read_parse_error;
                     }
                 }
                 parser->type_header_len = type_header_len;
@@ -1074,7 +1074,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                 parser->data_read = 0;
                 parser->data = NULL;
                 if (!r)
-                    return -2;
+                    return usbredirparser_read_parse_error;
                 /* header len may change if this was an hello packet */
                 header_len = usbredirparser_get_header_len(parser_pub);
             }
