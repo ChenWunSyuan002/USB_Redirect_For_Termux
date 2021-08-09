@@ -1,3 +1,12 @@
+# usbredir-0.11.0 - 10 Aug 2021
+
+- !40 Fixes use-after-free on usbredirparser serialization
+- !25 Fixes memory leak in usbredirparser
+- !32 Fixes build in MacOS related to visibility of exported symbols
+- !36 Adds usbredirfilter_free function
+- !29 Adds Fuzzing for Filters
+- !34 Improvements to usbredirfilter_string_to_rules()
+
 # usbredir-0.10.0 - 27 May 2021
 
 - !23 Fixes 0.9.0 regression in bulk transfer message size
