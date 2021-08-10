@@ -19,6 +19,7 @@
 #include <array>
 #include <algorithm>
 #include <memory>
+#include <type_traits>
 
 #include <cassert>
 #include <cinttypes>
@@ -55,15 +56,30 @@ int parser_read(void *priv, uint8_t *data, int count)
     return fdp->ConsumeData(data, count);
 }
 
+// Read over complete input buffer to detect buffer overflows
+void read_all(const void *data, size_t count)
+{
+#ifdef __cpp_lib_smart_ptr_for_overwrite
+    const auto buf = std::make_unique_for_overwrite<uint8_t[]>(count);
+#else
+    const auto buf = std::make_unique<uint8_t[]>(count);
+#endif
+
+    memcpy(buf.get(), data, count);
+}
+
+template <typename T, typename = std::enable_if_t<std::is_class<T>::value>>
+void read_all(const T *ptr)
+{
+    read_all(ptr, sizeof(T));
+}
+
 int parser_write(void *priv, uint8_t *data, int count)
 {
     // Simulate short writes
     count = std::min(count, fdp->ConsumeIntegralInRange(1, 4 * count));
 
-    // Read over complete source buffer to detect buffer overflows on write
-    void *buf = malloc(count);
-    memcpy(buf, data, count);
-    free(buf);
+    read_all(data, count);
 
     return count;
 }
@@ -183,6 +199,8 @@ void parser_control_packet(void *priv, uint64_t id,
     struct usb_redir_control_packet_header *control_packet,
     uint8_t *data, int data_len)
 {
+    read_all(control_packet);
+    read_all(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -190,6 +208,8 @@ void parser_bulk_packet(void *priv, uint64_t id,
     struct usb_redir_bulk_packet_header *bulk_packet,
     uint8_t *data, int data_len)
 {
+    read_all(bulk_packet);
+    read_all(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -197,6 +217,8 @@ void parser_iso_packet(void *priv, uint64_t id,
     struct usb_redir_iso_packet_header *iso_packet,
     uint8_t *data, int data_len)
 {
+    read_all(iso_packet);
+    read_all(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -204,6 +226,8 @@ void parser_interrupt_packet(void *priv, uint64_t id,
     struct usb_redir_interrupt_packet_header *interrupt_packet,
     uint8_t *data, int data_len)
 {
+    read_all(interrupt_packet);
+    read_all(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -211,6 +235,8 @@ void parser_buffered_bulk_packet(void *priv, uint64_t id,
     struct usb_redir_buffered_bulk_packet_header *buffered_bulk_header,
     uint8_t *data, int data_len)
 {
+    read_all(buffered_bulk_header);
+    read_all(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -242,16 +268,19 @@ void parser_device_disconnect_ack(void *priv)
 void parser_start_bulk_receiving(void *priv, uint64_t id,
     struct usb_redir_start_bulk_receiving_header *start_bulk_receiving)
 {
+    read_all(start_bulk_receiving);
 }
 
 void parser_stop_bulk_receiving(void *priv, uint64_t id,
     struct usb_redir_stop_bulk_receiving_header *stop_bulk_receiving)
 {
+    read_all(stop_bulk_receiving);
 }
 
 void parser_bulk_receiving_status(void *priv, uint64_t id,
     struct usb_redir_bulk_receiving_status_header *bulk_receiving_status)
 {
+    read_all(bulk_receiving_status);
 }
 
 int try_unserialize(struct usbredirparser *parser, FuzzedDataProvider *fdp)
