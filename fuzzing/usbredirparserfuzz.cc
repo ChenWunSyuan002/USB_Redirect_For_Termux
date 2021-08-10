@@ -49,11 +49,17 @@ void parser_log(void *priv, int level, const char *msg)
 
 int parser_read(void *priv, uint8_t *data, int count)
 {
+    // Simulate short reads
+    count = std::min(count, fdp->ConsumeIntegralInRange(1, 4 * count));
+
     return fdp->ConsumeData(data, count);
 }
 
 int parser_write(void *priv, uint8_t *data, int count)
 {
+    // Simulate short writes
+    count = std::min(count, fdp->ConsumeIntegralInRange(1, 4 * count));
+
     // Read over complete source buffer to detect buffer overflows on write
     void *buf = malloc(count);
     memcpy(buf, data, count);
