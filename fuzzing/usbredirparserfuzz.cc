@@ -21,7 +21,6 @@
 #include <memory>
 
 #include <cinttypes>
-#include <cstdio>
 #include <cstring>
 #include <limits>
 
@@ -43,33 +42,17 @@ struct ParserDeleter {
 std::unique_ptr<struct usbredirparser, ParserDeleter> parser;
 std::unique_ptr<FuzzedDataProvider> fdp;
 
-void log(const char *format, ...)
-{
-#if 0
-    va_list args;
-
-    va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
-#endif
-}
-
 void parser_log(void *priv, int level, const char *msg)
 {
-    log("[%d] %s\n", level, msg);
 }
 
 int parser_read(void *priv, uint8_t *data, int count)
 {
-    log("%s: %d bytes\n", __func__, count);
-
     return fdp->ConsumeData(data, count);
 }
 
 int parser_write(void *priv, uint8_t *data, int count)
 {
-    log("%s: %d bytes\n", __func__, count);
-
     // Read over complete source buffer to detect buffer overflows on write
     void *buf = malloc(count);
     memcpy(buf, data, count);
@@ -81,60 +64,24 @@ int parser_write(void *priv, uint8_t *data, int count)
 void parser_device_connect(void *priv,
     struct usb_redir_device_connect_header *device_connect)
 {
-    log("%s: speed=%d, class=%d, subclass=%d, protocol=%d, vendor=%04x,"
-        " product=%04x\n",
-        __func__,
-        device_connect->speed,
-        device_connect->device_class,
-        device_connect->device_subclass,
-        device_connect->device_protocol,
-        device_connect->vendor_id,
-        device_connect->product_id);
 }
 
 void parser_device_disconnect(void *priv)
 {
-    log("%s\n", __func__);
 }
 
 void parser_reset(void *priv)
 {
-    log("%s\n", __func__);
 }
 
 void parser_interface_info(void *priv,
     struct usb_redir_interface_info_header *info)
 {
-    uint32_t i;
-
-    log("%s:", __func__);
-
-    for (i = 0; i < info->interface_count; i++) {
-        log(" [interface %d, class %d, subclass %d, protocol %d]",
-            info->interface[i], info->interface_class[i],
-            info->interface_subclass[i], info->interface_protocol[i]);
-    }
-
-    log("\n");
 }
 
 void parser_ep_info(void *priv,
     struct usb_redir_ep_info_header *ep_info)
 {
-    int i;
-
-    log("%s:", __func__);
-
-    for (i = 0; i < 32; i++) {
-        if (ep_info->type[i] != usb_redir_type_invalid) {
-            log(" [index %d, type %d, interval %d, interface %d,"
-                " max-packetsize %d]",
-                i, (int)ep_info->type[i], (int)ep_info->interval[i],
-                (int)ep_info->interface[i], ep_info->max_packet_size[i]);
-       }
-    }
-
-    log("\n");
 }
 
 void parser_set_configuration(void *priv, uint64_t id,
@@ -149,8 +96,6 @@ void parser_get_configuration(void *priv, uint64_t id)
 void parser_configuration_status(void *priv, uint64_t id,
     struct usb_redir_configuration_status_header *config_status)
 {
-    log("%s: id=%" PRIu64 ", status=%d, configuration=%d\n",
-        __func__, id, config_status->status, config_status->configuration);
 }
 
 void parser_set_alt_setting(void *priv, uint64_t id,
@@ -166,11 +111,6 @@ void parser_get_alt_setting(void *priv, uint64_t id,
 void parser_alt_setting_status(void *priv, uint64_t id,
     struct usb_redir_alt_setting_status_header *alt_setting_status)
 {
-    log("%s: id=%" PRIu64 ", status=%d, interface=%d, alt=%d\n",
-        __func__, id,
-        alt_setting_status->status,
-        alt_setting_status->interface,
-        alt_setting_status->alt);
 }
 
 void parser_start_iso_stream(void *priv, uint64_t id,
@@ -232,36 +172,10 @@ void parser_filter_filter(void *priv,
     usbredirfilter_free(rules);
 }
 
-void dump_data(const uint8_t *data, const int len)
-{
-    int i;
-
-    if (len == 0) {
-        return;
-    }
-
-    log("  ");
-    for (i = 0; i < len; i++) {
-        log(" %02X", (unsigned int)data[i]);
-    }
-    log("\n");
-}
-
 void parser_control_packet(void *priv, uint64_t id,
     struct usb_redir_control_packet_header *control_packet,
     uint8_t *data, int data_len)
 {
-    log("%s: id=%" PRIu64 ", endpoint=%d, request=%d, requesttype=%d,"
-        " status=%d, value=%d, index=%d, length=%d\n",
-        __func__, id,
-        control_packet->endpoint,
-        control_packet->request,
-        control_packet->requesttype,
-        control_packet->status,
-        control_packet->value,
-        control_packet->index,
-        control_packet->length);
-    dump_data(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -269,15 +183,6 @@ void parser_bulk_packet(void *priv, uint64_t id,
     struct usb_redir_bulk_packet_header *bulk_packet,
     uint8_t *data, int data_len)
 {
-    log("%s: id=%" PRIu64 ", endpoint=%d, status=%d, length=%d, stream_id=%d,"
-        " length_high=%d\n",
-        __func__, id,
-        bulk_packet->endpoint,
-        bulk_packet->status,
-        bulk_packet->length,
-        bulk_packet->stream_id,
-        bulk_packet->length_high);
-    dump_data(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -285,12 +190,6 @@ void parser_iso_packet(void *priv, uint64_t id,
     struct usb_redir_iso_packet_header *iso_packet,
     uint8_t *data, int data_len)
 {
-    log("%s: id=%" PRIu64 ", endpoint=%d, status=%d, length=%d\n",
-        __func__, id,
-        iso_packet->endpoint,
-        iso_packet->status,
-        iso_packet->length);
-    dump_data(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -298,12 +197,6 @@ void parser_interrupt_packet(void *priv, uint64_t id,
     struct usb_redir_interrupt_packet_header *interrupt_packet,
     uint8_t *data, int data_len)
 {
-    log("%s: id=%" PRIu64 ", endpoint=%d, status=%d, length=%d\n",
-        __func__, id,
-        interrupt_packet->endpoint,
-        interrupt_packet->status,
-        interrupt_packet->length);
-    dump_data(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -311,13 +204,6 @@ void parser_buffered_bulk_packet(void *priv, uint64_t id,
     struct usb_redir_buffered_bulk_packet_header *buffered_bulk_header,
     uint8_t *data, int data_len)
 {
-    log("%s: stream_id=%d, length=%d, endpoint=%d, status=%d\n",
-        __func__, id,
-        buffered_bulk_header->stream_id,
-        buffered_bulk_header->length,
-        buffered_bulk_header->endpoint,
-        buffered_bulk_header->status);
-    dump_data(data, data_len);
     usbredirparser_free_packet_data(parser.get(), data);
 }
 
@@ -340,7 +226,6 @@ void parser_free_lock(void *lock)
 
 void parser_hello(void *priv, struct usb_redir_hello_header *h)
 {
-    log("%s: %s\n", __func__, h->version);
 }
 
 void parser_device_disconnect_ack(void *priv)
@@ -488,7 +373,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
                 // Keep reading
                 break;
             default:
-                log("usbredirparser_do_read failed: %d\n", ret);
                 goto out;
             }
 
@@ -500,7 +384,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         while (usbredirparser_has_data_to_write(parser.get())) {
             ret = usbredirparser_do_write(parser.get());
             if (ret < 0) {
-                log("usbredirparser_do_write failed: %d\n", ret);
                 goto out;
             }
         }
