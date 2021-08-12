@@ -16,11 +16,7 @@
    License along with the GNU C Library; if not, write to the Free
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
-
-#ifndef _USBREDIRPARSER_STRTOK_H_
-#define _USBREDIRPARSER_STRTOK_H_
+#pragma once
 
 char *
 glibc_strtok_r(char *s, const char *delim, char **save_ptr);
-
-#endif

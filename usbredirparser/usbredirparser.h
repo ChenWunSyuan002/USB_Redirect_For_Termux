@@ -18,8 +18,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __USBREDIRPARSER_H
-#define __USBREDIRPARSER_H
+#pragma once
 
 #include "usbredirproto.h"
 
@@ -381,6 +380,4 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -18,8 +18,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __USBREDIRPROTO_COMPAT_H
-#define __USBREDIRPROTO_COMPAT_H
+#pragma once
 
 /* PACK macros borrowed from spice-protocol */
 #ifdef __GNUC__
@@ -81,6 +80,4 @@ struct usb_redir_bulk_packet_header_16bit_length {
 
 #if defined(__MINGW32__) || !defined(__GNUC__)
 #pragma pack(pop)
-#endif
-
 #endif

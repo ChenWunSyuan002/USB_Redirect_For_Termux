@@ -18,8 +18,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __USBREDIRFILTER_H
-#define __USBREDIRFILTER_H
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
@@ -138,6 +137,4 @@ void usbredirfilter_free(void *ptr);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

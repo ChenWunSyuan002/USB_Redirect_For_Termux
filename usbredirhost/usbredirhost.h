@@ -18,8 +18,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __USBREDIRHOST_H
-#define __USBREDIRHOST_H
+#pragma once
 
 #include <libusb.h>
 #include "usbredirparser.h"
@@ -181,6 +180,4 @@ int usbredirhost_check_device_filter(const struct usbredirfilter_rule *rules,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

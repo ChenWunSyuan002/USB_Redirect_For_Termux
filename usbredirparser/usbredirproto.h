@@ -18,8 +18,7 @@
    You should have received a copy of the GNU Lesser General Public
    License along with this library; if not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __USBREDIRPROTO_H
-#define __USBREDIRPROTO_H
+#pragma once
 
 /* PACK macros borrowed from spice-protocol */
 #ifdef __GNUC__
@@ -302,6 +301,4 @@ struct usb_redir_buffered_bulk_packet_header {
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
