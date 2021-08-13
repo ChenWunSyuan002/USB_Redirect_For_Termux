@@ -1496,7 +1496,6 @@ void usbredirparser_send_buffered_bulk_packet(struct usbredirparser *parser,
 
 /****** Serialization support ******/
 
-#define USBREDIRPARSER_SERIALIZE_MAGIC        0x55525031
 #define USBREDIRPARSER_SERIALIZE_BUF_SIZE     65536
 
 /* Serialization format, send and receiving endian are expected to be the same!

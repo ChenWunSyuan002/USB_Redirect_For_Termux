@@ -22,6 +22,8 @@
 
 #include "usbredirproto.h"
 
+#define USBREDIRPARSER_SERIALIZE_MAGIC 0x55525031
+
 #ifdef __cplusplus
 extern "C" {
 #endif
