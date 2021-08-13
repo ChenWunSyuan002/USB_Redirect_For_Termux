@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <memory>
 
+#include <cassert>
 #include <cinttypes>
 #include <cstring>
 #include <limits>
@@ -255,9 +256,11 @@ int try_unserialize(struct usbredirparser *parser, FuzzedDataProvider *fdp)
     state.reserve(len);
 
     if (len >= 4) {
-        // Could also move USBREDIRPARSER_SERIALIZE_MAGIC after moving it to
-        // a shared header.
-        state.insert(state.end(), {'U', 'R', 'P', '1'});
+        const uint32_t magic = USBREDIRPARSER_SERIALIZE_MAGIC;
+        assert(state.empty());
+        state.resize(sizeof(magic));
+        memcpy(state.data(), &magic, sizeof(magic));
+
         len -= 4;
     }
 
