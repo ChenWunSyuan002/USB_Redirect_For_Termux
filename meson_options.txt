@@ -21,3 +21,8 @@ option('tools',
     type : 'feature',
     value : 'enabled',
     description : 'Build usbredir\'s tools such as usbredirect')
+
+option('tests',
+    type : 'feature',
+    value : 'enabled',
+    description : 'Build usbredir\'s tests such as filter')

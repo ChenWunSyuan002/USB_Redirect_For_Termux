@@ -106,7 +106,9 @@ if host_machine.system() != 'windows'
         subdir('fuzzing')
     endif
 endif
-subdir('tests')
+if get_option('tests').enabled()
+    subdir('tests')
+endif
 subdir('data')
 
 summary(summary_info, bool_yn: true)
