@@ -48,12 +48,19 @@ void parser_log(void *priv, int level, const char *msg)
 {
 }
 
+int wobbly_read_write_count(int count)
+{
+    if (count > (1024 * 1024)) {
+        return count;
+    }
+
+    return std::min(count, fdp->ConsumeIntegralInRange(1, 4 * count));
+}
+
 int parser_read(void *priv, uint8_t *data, int count)
 {
     // Simulate short reads
-    count = std::min(count, fdp->ConsumeIntegralInRange(1, 4 * count));
-
-    return fdp->ConsumeData(data, count);
+    return fdp->ConsumeData(data, wobbly_read_write_count(count));
 }
 
 // Read over complete input buffer to detect buffer overflows
@@ -77,7 +84,7 @@ void read_all(const T *ptr)
 int parser_write(void *priv, uint8_t *data, int count)
 {
     // Simulate short writes
-    count = std::min(count, fdp->ConsumeIntegralInRange(1, 4 * count));
+    count = wobbly_read_write_count(count);
 
     read_all(data, count);
 
