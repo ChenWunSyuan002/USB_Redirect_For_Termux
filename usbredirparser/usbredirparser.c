@@ -20,6 +20,7 @@
 */
 #include "config.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -1100,6 +1101,8 @@ int usbredirparser_do_write(struct usbredirparser *parser_pub)
     int w, ret = 0;
 
     LOCK(parser);
+    assert((parser->write_buf_count != 0) ^ (parser->write_buf == NULL));
+
     for (;;) {
         wbuf = parser->write_buf;
         if (!wbuf)
@@ -1838,6 +1841,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     if (unserialize_data(parser, &state, &remain, &parser->data, &i, "data"))
         return -1;
     parser->data_read = i;
+    parser->write_buf_count = 0;
 
     /* Get the write buffer count and the write buffers */
     if (unserialize_int(parser, &state, &remain, &i, "write_buf_count"))
@@ -1867,6 +1871,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         wbuf->len = l;
         *next = wbuf;
         next = &wbuf->next;
+        parser->write_buf_count++;
         i--;
     }
 
