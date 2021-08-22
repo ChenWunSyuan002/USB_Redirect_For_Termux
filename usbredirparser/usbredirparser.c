@@ -1748,6 +1748,12 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         return -1;
     }
 
+    if (parser->write_buf_count != 0 || parser->write_buf != NULL ||
+        parser->data != NULL) {
+        ERROR("unserialization must use a pristine parser");
+        return -1;
+    }
+
     if (unserialize_int(parser, &state, &remain, &i, "length"))
         return -1;
     if (i != len) {
@@ -1838,16 +1844,28 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         return -1;
     next = &parser->write_buf;
     while (i) {
+        uint8_t *buf = NULL;
+
+        l = 0;
+        if (unserialize_data(parser, &state, &remain, &buf, &l, "wbuf")) {
+            return -1;
+        }
+
+        if (l == 0) {
+            free(buf);
+            ERROR("write buffer %d is empty", i);
+            return -1;
+        }
+
         wbuf = calloc(1, sizeof(*wbuf));
         if (!wbuf) {
+            free(buf);
             ERROR("Out of memory allocating unserialize buffer");
             return -1;
         }
-        *next = wbuf;
-        l = 0;
-        if (unserialize_data(parser, &state, &remain, &wbuf->buf, &l, "wbuf"))
-            return -1;
+        wbuf->buf = buf;
         wbuf->len = l;
+        *next = wbuf;
         next = &wbuf->next;
         i--;
     }
