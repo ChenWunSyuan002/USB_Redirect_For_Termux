@@ -1044,10 +1044,17 @@ static int usbredirhost_can_write_iso_package(struct usbredirhost *host)
 {
     uint64_t size;
 
-    if (!host->buffered_output_size_func)
-        return true;
+    if (host->flags & usbredirhost_fl_write_cb_owns_buffer) {
+        if (!host->buffered_output_size_func) {
+            /* Application is not dropping isoc packages */
+            return true;
+        }
+        size = host->buffered_output_size_func(host->func_priv);
+    } else {
+        /* queue is on usbredirparser */
+        size = usbredirparser_get_bufferered_output_size(host->parser);
+    }
 
-    size = host->buffered_output_size_func(host->func_priv);
     if (size >= host->iso_threshold.higher) {
         if (!host->iso_threshold.dropping)
             DEBUG("START dropping isoc packets %" PRIu64 " buffer > %" PRIu64 " hi threshold",
