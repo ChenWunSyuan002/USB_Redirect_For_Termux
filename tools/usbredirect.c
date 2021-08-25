@@ -519,7 +519,7 @@ main(int argc, char *argv[])
             self,
             PACKAGE_STRING,
             self->verbosity,
-            usbredirhost_fl_write_cb_owns_buffer);
+            0);
     if (!self->usbredirhost) {
         g_warning("Error starting usbredirhost");
         goto err_init;
