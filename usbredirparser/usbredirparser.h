@@ -245,6 +245,11 @@ int usbredirparser_do_read(struct usbredirparser *parser);
 /* This returns the number of usbredir packets queued up for writing */
 int usbredirparser_has_data_to_write(struct usbredirparser *parser);
 
+/* This returns the number of bytes queued to be written out. Can be used by control plane
+ * to drop data from being queued, see issue:
+ * https://gitlab.freedesktop.org/spice/usbredir/-/issues/19 */ 
+uint64_t usbredirparser_get_bufferered_output_size(struct usbredirparser *parser_pub);
+
 /* Call this when usbredirparser_has_data_to_write returns > 0
    returns 0 on success, -1 if a write error happened.
    If a write error happened, this function will retry writing any queued data

@@ -82,8 +82,9 @@ struct usbredirparser_priv {
     int data_len;
     int data_read;
     int to_skip;
-    struct usbredirparser_buf *write_buf;
     int write_buf_count;
+    struct usbredirparser_buf *write_buf;
+    uint64_t write_buf_total_size;
 };
 
 static void
@@ -128,6 +129,7 @@ usbredirparser_assert_invariants(const struct usbredirparser_priv *parser)
     assert((parser->data_len != 0) ^ (parser->data == NULL));
 
     int write_buf_count = 0;
+    uint64_t total_size = 0;
     const struct usbredirparser_buf *write_buf = parser->write_buf;
     for (; write_buf != NULL ; write_buf = write_buf->next) {
         assert(write_buf->pos >= 0);
@@ -135,8 +137,10 @@ usbredirparser_assert_invariants(const struct usbredirparser_priv *parser)
         assert(write_buf->pos <= write_buf->len);
         assert(write_buf->len == 0 || write_buf->buf != NULL);
         write_buf_count++;
+        total_size += write_buf->len;
     }
     assert(parser->write_buf_count == write_buf_count);
+    assert(parser->write_buf_total_size == total_size);
 #endif
 }
 
@@ -247,6 +251,19 @@ void usbredirparser_destroy(struct usbredirparser *parser_pub)
         parser->callb.free_lock_func(parser->lock);
 
     free(parser);
+}
+
+USBREDIR_VISIBLE
+uint64_t usbredirparser_get_bufferered_output_size(struct usbredirparser *parser_pub)
+{
+    struct usbredirparser_priv *parser =
+        (struct usbredirparser_priv *)parser_pub;
+    uint64_t size;
+
+    LOCK(parser);
+    size = parser->write_buf_total_size;
+    UNLOCK(parser);
+    return size;
 }
 
 static int usbredirparser_caps_get_cap(struct usbredirparser_priv *parser,
@@ -1166,8 +1183,10 @@ int usbredirparser_do_write(struct usbredirparser *parser_pub)
             parser->write_buf = wbuf->next;
             if (!(parser->flags & usbredirparser_fl_write_cb_owns_buffer))
                 free(wbuf->buf);
-            free(wbuf);
+
+            parser->write_buf_total_size -= wbuf->len;
             parser->write_buf_count--;
+            free(wbuf);
         }
     }
     UNLOCK(parser);
@@ -1197,7 +1216,7 @@ static void usbredirparser_queue(struct usbredirparser *parser_pub,
     uint8_t *buf, *type_header_out, *data_out;
     struct usb_redir_header *header;
     struct usbredirparser_buf *wbuf, *new_wbuf;
-    int header_len, type_header_len;
+    int header_len, type_header_len, total_size;
 
     header_len = usbredirparser_get_header_len(parser_pub);
     type_header_len = usbredirparser_get_type_header_len(parser_pub, type, 1);
@@ -1212,8 +1231,9 @@ static void usbredirparser_queue(struct usbredirparser *parser_pub,
         return;
     }
 
+    total_size = header_len + type_header_len + data_len;
     new_wbuf = calloc(1, sizeof(*new_wbuf));
-    buf = malloc(header_len + type_header_len + data_len);
+    buf = malloc(total_size);
     if (!new_wbuf || !buf) {
         ERROR("Out of memory allocating buffer to send packet, dropping!");
         free(new_wbuf); free(buf);
@@ -1221,7 +1241,7 @@ static void usbredirparser_queue(struct usbredirparser *parser_pub,
     }
 
     new_wbuf->buf = buf;
-    new_wbuf->len = header_len + type_header_len + data_len;
+    new_wbuf->len = total_size;
 
     header = (struct usb_redir_header *)buf;
     type_header_out = buf + header_len;
@@ -1247,6 +1267,7 @@ static void usbredirparser_queue(struct usbredirparser *parser_pub,
 
         wbuf->next = new_wbuf;
     }
+    parser->write_buf_total_size += total_size;
     parser->write_buf_count++;
     UNLOCK(parser);
 }
@@ -1796,6 +1817,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     }
 
     if (!(parser->write_buf_count == 0 && parser->write_buf == NULL &&
+          parser->write_buf_total_size == 0 &&
           parser->data == NULL && parser->header_read == 0 &&
           parser->type_header_read == 0 && parser->data_read == 0)) {
         ERROR("unserialization must use a pristine parser");
@@ -1962,6 +1984,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         wbuf->len = l;
         *next = wbuf;
         next = &wbuf->next;
+        parser->write_buf_total_size += wbuf->len;
         parser->write_buf_count++;
         i--;
     }

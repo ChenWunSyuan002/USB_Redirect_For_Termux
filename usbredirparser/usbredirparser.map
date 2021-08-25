@@ -59,4 +59,10 @@ global:
     usbredirfilter_free;
 } USBREDIRPARSER_0.8.0;
 
+USBREDIRPARSER_0.11.0 {
+global:
+    usbredirparser_get_bufferered_output_size;
+} USBREDIRPARSER_0.10.0;
+
+
 # .... define new API here using predicted next version number ....
