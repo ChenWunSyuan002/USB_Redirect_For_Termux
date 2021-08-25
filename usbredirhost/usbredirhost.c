@@ -116,6 +116,7 @@ struct usbredirhost {
     usbredirhost_buffered_output_size buffered_output_size_func;
     void *func_priv;
     int verbose;
+    int flags;
     libusb_context *ctx;
     libusb_device *dev;
     libusb_device_handle *handle;
@@ -691,6 +692,7 @@ struct usbredirhost *usbredirhost_open_full(
     host->func_priv = func_priv;
     host->verbose = verbose;
     host->disconnected = 1; /* No device is connected initially */
+    host->flags = flags;
     host->parser = usbredirparser_create();
     if (!host->parser) {
         log_func(func_priv, usbredirparser_error,
@@ -1439,6 +1441,13 @@ void usbredirhost_set_buffered_output_size_cb(struct usbredirhost *host,
 {
     if (!host) {
         fprintf(stderr, "%s: invalid usbredirhost", __func__);
+        return;
+    }
+
+    if (!(host->flags & usbredirhost_fl_write_cb_owns_buffer)) {
+        host->log_func(host->func_priv, usbredirparser_warning,
+                       "can't set callback as usbredirhost owns the output "
+                       "buffer (flag: usbredirhost_fl_write_cb_owns_buffer)");
         return;
     }
 
