@@ -1751,8 +1751,9 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         return -1;
     }
 
-    if (parser->write_buf_count != 0 || parser->write_buf != NULL ||
-        parser->data != NULL) {
+    if (!(parser->write_buf_count == 0 && parser->write_buf == NULL &&
+          parser->data == NULL && parser->header_read == 0 &&
+          parser->type_header_read == 0 && parser->data_read == 0)) {
         ERROR("unserialization must use a pristine parser");
         return -1;
     }
@@ -1828,7 +1829,9 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     i = parser->type_header_len;
     if (unserialize_data(parser, &state, &remain, &data, &i, "type_header"))
         return -1;
-    parser->type_header_read = i;
+    if (parser->header_read == header_len) {
+        parser->type_header_read = i;
+    }
 
     if (parser->data_len) {
         parser->data = malloc(parser->data_len);
@@ -1840,8 +1843,13 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     i = parser->data_len;
     if (unserialize_data(parser, &state, &remain, &parser->data, &i, "data"))
         return -1;
-    parser->data_read = i;
-    parser->write_buf_count = 0;
+    if (parser->header_read == header_len &&
+        parser->type_header_read == parser->type_header_len) {
+        parser->data_read = i;
+    } else if (parser->data != NULL) {
+        free(parser->data);
+        parser->data = NULL;
+    }
 
     /* Get the write buffer count and the write buffers */
     if (unserialize_int(parser, &state, &remain, &i, "write_buf_count"))
