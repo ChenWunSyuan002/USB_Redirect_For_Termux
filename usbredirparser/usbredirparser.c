@@ -1809,19 +1809,19 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
 
     /* Set various length field froms the header (if we've a header) */
     if (parser->header_read == header_len) {
-                int type_header_len =
-                    usbredirparser_get_type_header_len(parser_pub,
-                                                       parser->header.type, 0);
-                if (type_header_len < 0 ||
-                    type_header_len > sizeof(parser->type_header) ||
-                    parser->header.length < type_header_len ||
-                    (parser->header.length > type_header_len &&
-                     !usbredirparser_expect_extra_data(parser))) {
-                    ERROR("error unserialize packet header invalid");
-                    return -1;
-                }
-                parser->type_header_len = type_header_len;
-                parser->data_len = parser->header.length - type_header_len;
+        int type_header_len =
+            usbredirparser_get_type_header_len(parser_pub,
+                                               parser->header.type, 0);
+        if (type_header_len < 0 ||
+            type_header_len > sizeof(parser->type_header) ||
+            parser->header.length < type_header_len ||
+            (parser->header.length > type_header_len &&
+             !usbredirparser_expect_extra_data(parser))) {
+            ERROR("error unserialize packet header invalid");
+            return -1;
+        }
+        parser->type_header_len = type_header_len;
+        parser->data_len = parser->header.length - type_header_len;
     }
 
     data = parser->type_header;
