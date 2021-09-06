@@ -1865,8 +1865,14 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     }
     parser->header_read = i;
 
-    /* Set various length field froms the header (if we've a header) */
+    /* Set various length field from the header (if any) */
     if (parser->header_read == header_len) {
+        if (parser->header.length > MAX_PACKET_SIZE) {
+            ERROR("packet length of %d larger than permitted %d bytes",
+                  parser->header.length, MAX_PACKET_SIZE);
+            return -1;
+        }
+
         int type_header_len =
             usbredirparser_get_type_header_len(parser_pub,
                                                parser->header.type, 0);
