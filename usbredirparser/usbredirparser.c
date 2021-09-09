@@ -1880,7 +1880,6 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
             return -1;
         }
         parser->type_header_len = type_header_len;
-        parser->data_len = parser->header.length - type_header_len;
     }
 
     data = parser->type_header;
@@ -1893,12 +1892,15 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         parser->type_header_read = i;
     }
 
-    if (parser->data_len) {
-        parser->data = malloc(parser->data_len);
-        if (!parser->data) {
-            ERROR("Out of memory allocating unserialize buffer");
-            usbredirparser_assert_invariants(parser);
-            return -1;
+    if (parser->type_header_read == parser->type_header_len) {
+        parser->data_len = parser->header.length - parser->type_header_len;
+        if (parser->data_len) {
+            parser->data = malloc(parser->data_len);
+            if (!parser->data) {
+                ERROR("Out of memory allocating unserialize buffer");
+                usbredirparser_assert_invariants(parser);
+                return -1;
+            }
         }
     }
     i = parser->data_len;
