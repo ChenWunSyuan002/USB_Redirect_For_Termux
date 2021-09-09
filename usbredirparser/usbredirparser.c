@@ -111,6 +111,35 @@ va_log(struct usbredirparser_priv *parser, int verbose, const char *fmt, ...)
 #define INFO(...)    va_log(parser, usbredirparser_info, __VA_ARGS__)
 #define DEBUG(...)    va_log(parser, usbredirparser_debug, __VA_ARGS__)
 
+static inline void
+usbredirparser_assert_invariants(const struct usbredirparser_priv *parser)
+{
+#ifdef ENABLE_EXTRA_CHECKS
+    assert(parser != NULL);
+    assert(parser->header_read >= 0);
+    assert(parser->header_read <= sizeof(parser->header));
+    assert(parser->type_header_read >= 0);
+    assert(parser->type_header_len <= sizeof(parser->type_header));
+    assert(parser->type_header_read <= parser->type_header_len);
+    assert(parser->data_len >= 0);
+    assert(parser->data_len <= MAX_PACKET_SIZE);
+    assert(parser->data_read >= 0);
+    assert(parser->data_read <= parser->data_len);
+    assert((parser->data_len != 0) ^ (parser->data == NULL));
+
+    int write_buf_count = 0;
+    const struct usbredirparser_buf *write_buf = parser->write_buf;
+    for (; write_buf != NULL ; write_buf = write_buf->next) {
+        assert(write_buf->pos >= 0);
+        assert(write_buf->len >= 0);
+        assert(write_buf->pos <= write_buf->len);
+        assert(write_buf->len == 0 || write_buf->buf != NULL);
+        write_buf_count++;
+    }
+    assert(parser->write_buf_count == write_buf_count);
+#endif
+}
+
 #if 0 /* Can be enabled and called from random place to test serialization */
 static void serialize_test(struct usbredirparser *parser_pub)
 {
@@ -974,13 +1003,16 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
 
     header_len = usbredirparser_get_header_len(parser_pub);
 
+    usbredirparser_assert_invariants(parser);
     /* Skip forward to next packet (only used in error conditions) */
     while (parser->to_skip > 0) {
         uint8_t buf[65536];
         r = (parser->to_skip > sizeof(buf)) ? sizeof(buf) : parser->to_skip;
         r = parser->callb.read_func(parser->callb.priv, buf, r);
-        if (r <= 0)
+        if (r <= 0) {
+            usbredirparser_assert_invariants(parser);
             return r;
+        }
         parser->to_skip -= r;
     }
 
@@ -1000,6 +1032,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
         if (r > 0) {
             r = parser->callb.read_func(parser->callb.priv, dest, r);
             if (r <= 0) {
+                usbredirparser_assert_invariants(parser);
                 return r;
             }
         }
@@ -1015,6 +1048,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                           parser->header.type);
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
+                    usbredirparser_assert_invariants(parser);
                     return usbredirparser_read_parse_error;
                 }
                 /* This should never happen */
@@ -1022,6 +1056,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                     ERROR("error type specific header buffer too small, please report!!");
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
+                    usbredirparser_assert_invariants(parser);
                     return usbredirparser_read_parse_error;
                 }
                 if (parser->header.length > MAX_PACKET_SIZE) {
@@ -1029,6 +1064,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                           parser->header.length, MAX_PACKET_SIZE);
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
+                    usbredirparser_assert_invariants(parser);
                     return usbredirparser_read_parse_error;
                 }
                 if ((int)parser->header.length < type_header_len ||
@@ -1038,6 +1074,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                           parser->header.type, parser->header.length);
                     parser->to_skip = parser->header.length;
                     parser->header_read = 0;
+                    usbredirparser_assert_invariants(parser);
                     return usbredirparser_read_parse_error;
                 }
                 data_len = parser->header.length - type_header_len;
@@ -1047,6 +1084,7 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                         ERROR("Out of memory allocating data buffer");
                         parser->to_skip = parser->header.length;
                         parser->header_read = 0;
+                        usbredirparser_assert_invariants(parser);
                         return usbredirparser_read_parse_error;
                     }
                 }
@@ -1075,8 +1113,10 @@ int usbredirparser_do_read(struct usbredirparser *parser_pub)
                 parser->data_len  = 0;
                 parser->data_read = 0;
                 parser->data = NULL;
-                if (!r)
+                if (!r) {
+                    usbredirparser_assert_invariants(parser);
                     return usbredirparser_read_parse_error;
+                }
                 /* header len may change if this was an hello packet */
                 header_len = usbredirparser_get_header_len(parser_pub);
             }
@@ -1744,10 +1784,14 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     uint8_t *data;
     uint32_t i, l, header_len, remain = len;
 
-    if (unserialize_int(parser, &state, &remain, &i, "magic"))
+    usbredirparser_assert_invariants(parser);
+    if (unserialize_int(parser, &state, &remain, &i, "magic")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     if (i != USBREDIRPARSER_SERIALIZE_MAGIC) {
         ERROR("error unserialize magic mismatch");
+        usbredirparser_assert_invariants(parser);
         return -1;
     }
 
@@ -1755,21 +1799,27 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
           parser->data == NULL && parser->header_read == 0 &&
           parser->type_header_read == 0 && parser->data_read == 0)) {
         ERROR("unserialization must use a pristine parser");
+        usbredirparser_assert_invariants(parser);
         return -1;
     }
 
-    if (unserialize_int(parser, &state, &remain, &i, "length"))
+    if (unserialize_int(parser, &state, &remain, &i, "length")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     if (i != len) {
         ERROR("error unserialize length mismatch");
+        usbredirparser_assert_invariants(parser);
         return -1;
     }
 
     data = (uint8_t *)parser->our_caps;
     i = USB_REDIR_CAPS_SIZE * sizeof(int32_t);
     memcpy(orig_caps, parser->our_caps, i);
-    if (unserialize_data(parser, &state, &remain, &data, &i, "our_caps"))
+    if (unserialize_data(parser, &state, &remain, &data, &i, "our_caps")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     for (i =0; i < USB_REDIR_CAPS_SIZE; i++) {
         if (parser->our_caps[i] != orig_caps[i]) {
             /* orig_caps is our original settings
@@ -1781,6 +1831,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
                 /* Source has a cap we don't */
                 ERROR("error unserialize caps mismatch ours: %x recv: %x",
                       orig_caps[i], parser->our_caps[i]);
+                usbredirparser_assert_invariants(parser);
                 return -1;
             } else {
                 /* We've got a cap the source doesn't - that's OK */
@@ -1792,20 +1843,26 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
 
     data = (uint8_t *)parser->peer_caps;
     i = USB_REDIR_CAPS_SIZE * sizeof(int32_t);
-    if (unserialize_data(parser, &state, &remain, &data, &i, "peer_caps"))
+    if (unserialize_data(parser, &state, &remain, &data, &i, "peer_caps")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     if (i)
         parser->have_peer_caps = 1;
 
-    if (unserialize_int(parser, &state, &remain, &i, "skip"))
+    if (unserialize_int(parser, &state, &remain, &i, "skip")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     parser->to_skip = i;
 
     header_len = usbredirparser_get_header_len(parser_pub);
     data = (uint8_t *)&parser->header;
     i = header_len;
-    if (unserialize_data(parser, &state, &remain, &data, &i, "header"))
+    if (unserialize_data(parser, &state, &remain, &data, &i, "header")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     parser->header_read = i;
 
     /* Set various length field froms the header (if we've a header) */
@@ -1819,6 +1876,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
             (parser->header.length > type_header_len &&
              !usbredirparser_expect_extra_data(parser))) {
             ERROR("error unserialize packet header invalid");
+            usbredirparser_assert_invariants(parser);
             return -1;
         }
         parser->type_header_len = type_header_len;
@@ -1827,8 +1885,10 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
 
     data = parser->type_header;
     i = parser->type_header_len;
-    if (unserialize_data(parser, &state, &remain, &data, &i, "type_header"))
+    if (unserialize_data(parser, &state, &remain, &data, &i, "type_header")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     if (parser->header_read == header_len) {
         parser->type_header_read = i;
     }
@@ -1837,12 +1897,15 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         parser->data = malloc(parser->data_len);
         if (!parser->data) {
             ERROR("Out of memory allocating unserialize buffer");
+            usbredirparser_assert_invariants(parser);
             return -1;
         }
     }
     i = parser->data_len;
-    if (unserialize_data(parser, &state, &remain, &parser->data, &i, "data"))
+    if (unserialize_data(parser, &state, &remain, &parser->data, &i, "data")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     if (parser->header_read == header_len &&
         parser->type_header_read == parser->type_header_len) {
         parser->data_read = i;
@@ -1852,20 +1915,25 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     }
 
     /* Get the write buffer count and the write buffers */
-    if (unserialize_int(parser, &state, &remain, &i, "write_buf_count"))
+    if (unserialize_int(parser, &state, &remain, &i, "write_buf_count")) {
+        usbredirparser_assert_invariants(parser);
         return -1;
+    }
     next = &parser->write_buf;
+    usbredirparser_assert_invariants(parser);
     while (i) {
         uint8_t *buf = NULL;
 
         l = 0;
         if (unserialize_data(parser, &state, &remain, &buf, &l, "wbuf")) {
+            usbredirparser_assert_invariants(parser);
             return -1;
         }
 
         if (l == 0) {
             free(buf);
             ERROR("write buffer %d is empty", i);
+            usbredirparser_assert_invariants(parser);
             return -1;
         }
 
@@ -1873,6 +1941,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         if (!wbuf) {
             free(buf);
             ERROR("Out of memory allocating unserialize buffer");
+            usbredirparser_assert_invariants(parser);
             return -1;
         }
         wbuf->buf = buf;
@@ -1885,8 +1954,10 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
 
     if (remain) {
         ERROR("error unserialize %d bytes of extraneous state data", remain);
+        usbredirparser_assert_invariants(parser);
         return -1;
     }
 
+    usbredirparser_assert_invariants(parser);
     return 0;
 }

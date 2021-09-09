@@ -34,6 +34,10 @@ add_project_arguments(supported_cc_flags, language: 'c')
 
 config = configuration_data()
 
+if get_option('extra-checks')
+  config.set('ENABLE_EXTRA_CHECKS', '1')
+endif
+
 config.set('USBREDIR_VISIBLE', '')
 foreach visibility : [
     '__attribute__((visibility ("default")))',

@@ -31,3 +31,8 @@ option('tests',
     type : 'feature',
     value : 'enabled',
     description : 'Build usbredir\'s tests such as filter')
+
+option('extra-checks',
+    type : 'boolean',
+    value : false,
+    description : 'Enable extra checks on code. Do not use for production')

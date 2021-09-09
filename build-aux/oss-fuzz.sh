@@ -46,6 +46,9 @@ config=(
 
     # Don't use "-Wl,--no-undefined"
     -Db_lundef=false
+
+    # Enable internal tests
+    -Dextra-checks=true
     )
 
 if ! meson setup "${config[@]}" -- "$builddir"; then
