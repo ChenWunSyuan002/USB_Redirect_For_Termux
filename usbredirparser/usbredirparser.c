@@ -1881,7 +1881,14 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     header_len = usbredirparser_get_header_len(parser_pub);
     data = (uint8_t *)&parser->header;
     i = header_len;
+    memset(&parser->header, 0, sizeof(parser->header));
     if (unserialize_data(parser, &state, &remain, &data, &i, "header")) {
+        usbredirparser_assert_invariants(parser);
+        return -1;
+    }
+    if (parser->header.length > MAX_PACKET_SIZE) {
+        ERROR("packet length of %d larger than permitted %d bytes",
+              parser->header.length, MAX_PACKET_SIZE);
         usbredirparser_assert_invariants(parser);
         return -1;
     }
@@ -1890,12 +1897,6 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
 
     /* Set various length field from the header (if any) */
     if (parser->header_read == header_len) {
-        if (parser->header.length > MAX_PACKET_SIZE) {
-            ERROR("packet length of %d larger than permitted %d bytes",
-                  parser->header.length, MAX_PACKET_SIZE);
-            return -1;
-        }
-
         int type_header_len =
             usbredirparser_get_type_header_len(parser_pub,
                                                parser->header.type, 0);
