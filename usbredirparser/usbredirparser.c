@@ -1864,6 +1864,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         return -1;
     }
     parser->header_read = i;
+    parser->type_header_len = 0;
 
     /* Set various length field from the header (if any) */
     if (parser->header_read == header_len) {
@@ -1911,15 +1912,20 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
     }
     i = parser->data_len;
     if (unserialize_data(parser, &state, &remain, &parser->data, &i, "data")) {
+        free(parser->data);
+        parser->data = NULL;
+        parser->data_len = 0;
         usbredirparser_assert_invariants(parser);
         return -1;
     }
     if (parser->header_read == header_len &&
-        parser->type_header_read == parser->type_header_len) {
+        parser->type_header_read == parser->type_header_len &&
+        parser->data_len > 0) {
         parser->data_read = i;
     } else if (parser->data != NULL) {
         free(parser->data);
         parser->data = NULL;
+        parser->data_len = 0;
     }
 
     /* Get the write buffer count and the write buffers */
