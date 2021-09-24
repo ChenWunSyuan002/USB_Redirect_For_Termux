@@ -17,6 +17,11 @@ option('fuzzing-install-dir',
     type : 'string',
     description : 'Installation directory for fuzzing binaries')
 
+option('stack_protector',
+    type : 'feature',
+    value : 'enabled',
+    description : 'Build usbredir\'s with stack-protector')
+
 option('tools',
     type : 'feature',
     value : 'enabled',

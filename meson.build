@@ -15,10 +15,10 @@ cc_flags = [
     '--param=ssp-buffer-size=4',
 ]
 if host_machine.system() != 'windows'
-    cc_flags += [
-	'-Wp,-D_FORTIFY_SOURCE=2',
-	'-fstack-protector',
-    ]
+    cc_flags += [ '-Wp,-D_FORTIFY_SOURCE=2' ]
+    if not get_option('stack_protector').disabled()
+        cc_flags += [ '-fstack-protector' ]
+    endif
 endif
 
 # Check if we are building from .git
