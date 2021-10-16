@@ -1,4 +1,4 @@
-project('usbredir', 'c', 'cpp',
+project('usbredir', 'c',
     version: '0.11.0',
     license: 'LGPLv2.1+',
     meson_version : '>= 0.53',
