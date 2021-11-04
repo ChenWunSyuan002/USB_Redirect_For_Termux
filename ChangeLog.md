@@ -1,3 +1,13 @@
+# usbredir-0.12.0 - 12 Nov 2021
+
+- !47 Implement dropping packets from isochronous devices
+  when buffer is owned by usbredirparser library
+- !50 Use packet size limit on deserialization
+- !54 Fix possible bad state in deserialization logic
+- !48 Fix possible memory leak in serialization logic
+- !45 Fix (un)serialization with empty write buffers
+- !42 !46 !52 Improvements to usbredirparserfuzz
+
 # usbredir-0.11.0 - 10 Aug 2021
 
 - !40 Fixes use-after-free on usbredirparser serialization

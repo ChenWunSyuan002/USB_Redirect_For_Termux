@@ -1,8 +1,8 @@
 # so verison, see:
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-usbredir_parser_current = 2
+usbredir_parser_current = 3
 usbredir_parser_revision = 0
-usbredir_parser_age = 1
+usbredir_parser_age = 2
 usbredir_parser_so_version = '@0@.@1@.@2@'.format(
     usbredir_parser_current - usbredir_parser_age,
     usbredir_parser_age,
