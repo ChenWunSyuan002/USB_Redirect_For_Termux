@@ -59,6 +59,7 @@ parse_opt_device(const char *device, int *vendor, int *product)
         }
         gint64 bus = g_ascii_strtoll(usbid[0], NULL, 10);
         gint64 addr = g_ascii_strtoll(usbid[1], NULL, 10);
+        g_strfreev(usbid);
 
         libusb_device **list = NULL;
         ssize_t i, n;
