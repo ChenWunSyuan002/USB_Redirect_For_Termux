@@ -22,10 +22,6 @@ All that an application wishing to implement an usb-host needs to do is:
 - Provide write and read callbacks for the actual transport of usbredir data
 - Monitor for usbredir and libusb read/write events and call their handlers
 
-## usbredirserver
-
-A simple tcp server usb-host, using usbredirhost
-
 ## usbredirtestclient
 
 A small testclient for the usbredir protocol over tcp, using usbredirparser

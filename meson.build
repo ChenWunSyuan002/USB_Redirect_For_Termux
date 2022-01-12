@@ -103,7 +103,6 @@ if get_option('tools').enabled()
     subdir('tools')
 endif
 if host_machine.system() != 'windows'
-    subdir('usbredirserver')
     subdir('usbredirtestclient')
 
     if get_option('fuzzing').enabled()
