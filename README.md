@@ -22,6 +22,12 @@ All that an application wishing to implement an usb-host needs to do is:
 - Provide write and read callbacks for the actual transport of usbredir data
 - Monitor for usbredir and libusb read/write events and call their handlers
 
+## usbredirect
+
+The usbredirect binary is an usbredir client for exporting an USB device either
+as TCP client or server, for use from another (virtual) machine through the
+usbredir protocol.
+
 ## usbredirtestclient
 
 A small testclient for the usbredir protocol over tcp, using usbredirparser
