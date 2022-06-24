@@ -1816,9 +1816,7 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         return -1;
     }
 
-    if (!(parser->write_buf_count == 0 && parser->write_buf == NULL &&
-          parser->write_buf_total_size == 0 &&
-          parser->data == NULL && parser->header_read == 0 &&
+    if (!(parser->data == NULL && parser->header_read == 0 &&
           parser->type_header_read == 0 && parser->data_read == 0)) {
         ERROR("unserialization must use a pristine parser");
         usbredirparser_assert_invariants(parser);

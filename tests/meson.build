@@ -1,5 +1,6 @@
 tests = [
     'filter',
+    'serializer',
 ]
 
 deps = dependency('glib-2.0')
