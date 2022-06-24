@@ -1823,6 +1823,21 @@ int usbredirparser_unserialize(struct usbredirparser *parser_pub,
         return -1;
     }
 
+    {
+        /* We need to reset parser's state to receive unserialized
+         * data. */
+        struct usbredirparser_buf *wbuf = parser->write_buf;
+        while (wbuf) {
+            struct usbredirparser_buf *next_wbuf = wbuf->next;
+            free(wbuf->buf);
+            free(wbuf);
+            wbuf = next_wbuf;
+        }
+        parser->write_buf = NULL;
+        parser->write_buf_count = 0;
+        parser->write_buf_total_size = 0;
+    }
+
     if (unserialize_int(parser, &state, &remain, &i, "length")) {
         usbredirparser_assert_invariants(parser);
         return -1;
