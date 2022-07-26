@@ -567,7 +567,12 @@ main(int argc, char *argv[])
         GSocketService *socket_service;
 
         socket_service = g_socket_service_new ();
-        GInetAddress *iaddr = g_inet_address_new_loopback(G_SOCKET_FAMILY_IPV4);
+        GInetAddress *iaddr = g_inet_address_new_from_string(self->addr);
+        if (iaddr == NULL) {
+            g_warning("Failed to parse IP: %s", self->addr);
+            goto end;
+        }
+
         GSocketAddress *saddr = g_inet_socket_address_new(iaddr, self->port);
         g_object_unref(iaddr);
 
