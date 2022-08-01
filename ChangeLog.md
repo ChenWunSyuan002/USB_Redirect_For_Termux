@@ -1,3 +1,11 @@
+# usbredir-0.13.0 - 01 Aug 2022
+
+- !61 Fix regression on unserialize data
+- !59 Removes usbredirserver
+- !58 Improved header length checks when unserialising data
+- !62 Fix usage of command line argument in usbredirect
+- !57 Fix small memory leak on usbredirect
+
 # usbredir-0.12.0 - 12 Nov 2021
 
 - !47 Implement dropping packets from isochronous devices
