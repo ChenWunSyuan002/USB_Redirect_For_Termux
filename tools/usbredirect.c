@@ -22,7 +22,7 @@
 #include <gio/gwin32outputstream.h>
 #endif
 
-struct redirect {
+typedef struct redirect {
     struct {
         int vendor;
         int product;
@@ -40,7 +40,7 @@ struct redirect {
     int watch_server_id;
 
     GMainLoop *main_loop;
-};
+} redirect;
 
 static bool
 parse_opt_device(const char *device, int *vendor, int *product)
@@ -125,7 +125,7 @@ parse_opt_uri(const char *uri, char **adr, int *port)
     return true;
 }
 
-static struct redirect *
+static redirect *
 parse_opts(int *argc, char ***argv)
 {
     char *device = NULL;
@@ -133,7 +133,7 @@ parse_opts(int *argc, char ***argv)
     char *localaddr = NULL;
     gboolean keepalive = FALSE;
     gint verbosity = 0; /* none */
-    struct redirect *self = NULL;
+    redirect *self = NULL;
 
     GOptionEntry entries[] = {
         { "device", 0, 0, G_OPTION_ARG_STRING, &device, "Local USB device to be redirected", NULL },
@@ -162,7 +162,7 @@ parse_opts(int *argc, char ***argv)
         goto end;
     }
 
-    self = g_new0(struct redirect, 1);
+    self = g_new0(redirect, 1);
     if (!parse_opt_device(device, &self->device.vendor, &self->device.product)) {
         g_printerr("Failed to parse device: '%s' - expected: vendor:product or busnum-devnum\n", device);
         g_clear_pointer(&self, g_free);
@@ -202,7 +202,7 @@ end:
 static gpointer
 thread_handle_libusb_events(gpointer user_data)
 {
-    struct redirect *self = (struct redirect *) user_data;
+    redirect *self = (redirect *) user_data;
 
     int res = 0;
     const char *desc = "";
@@ -280,7 +280,7 @@ usbredir_log_cb(void *priv, int level, const char *msg)
 static int
 usbredir_read_cb(void *priv, uint8_t *data, int count)
 {
-    struct redirect *self = (struct redirect *) priv;
+    redirect *self = (redirect *) priv;
     GIOStream *iostream = G_IO_STREAM(self->connection);
     GError *err = NULL;
 
@@ -308,7 +308,7 @@ usbredir_read_cb(void *priv, uint8_t *data, int count)
 static int
 usbredir_write_cb(void *priv, uint8_t *data, int count)
 {
-    struct redirect *self = (struct redirect *) priv;
+    redirect *self = (redirect *) priv;
     GIOStream *iostream = G_IO_STREAM(self->connection);
     GError *err = NULL;
 
@@ -336,7 +336,7 @@ usbredir_write_cb(void *priv, uint8_t *data, int count)
 static void
 usbredir_write_flush_cb(void *user_data)
 {
-    struct redirect *self = (struct redirect *) user_data;
+    redirect *self = (redirect *) user_data;
     if (!self || !self->usbredirhost) {
         return;
     }
@@ -387,7 +387,7 @@ usbredir_unlock_lock(void *user_data)
 static gboolean
 connection_handle_io_cb(GIOChannel *source, GIOCondition condition, gpointer user_data)
 {
-    struct redirect *self = (struct redirect *) user_data;
+    redirect *self = (redirect *) user_data;
 
     if (condition & G_IO_ERR || condition & G_IO_HUP) {
         g_warning("Connection: err=%d, hup=%d - exiting", (condition & G_IO_ERR), (condition & G_IO_HUP));
@@ -419,7 +419,7 @@ end:
 static gboolean
 signal_handler(gpointer user_data)
 {
-    struct redirect *self = (struct redirect *) user_data;
+    redirect *self = (redirect *) user_data;
     g_main_loop_quit(self->main_loop);
     return G_SOURCE_REMOVE;
 }
@@ -431,7 +431,7 @@ connection_incoming_cb(GSocketService    *service,
                        GObject           *source_object,
                        gpointer           user_data)
 {
-    struct redirect *self = (struct redirect *) user_data;
+    redirect *self = (redirect *) user_data;
     self->connection = g_object_ref(client_connection);
 
     /* Add a GSource watch to handle polling for us and handle IO in the callback */
@@ -456,7 +456,7 @@ main(int argc, char *argv[])
         goto err_init;
     }
 
-    struct redirect *self = parse_opts(&argc, &argv);
+    redirect *self = parse_opts(&argc, &argv);
     if (!self) {
         /* specific issues logged in parse_opts() */
         return 1;
