@@ -415,6 +415,24 @@ end:
     return G_SOURCE_REMOVE;
 }
 
+static void
+create_watch(redirect *self)
+{
+    GSocket *socket = g_socket_connection_get_socket(self->connection);
+    int socket_fd = g_socket_get_fd(socket);
+    GIOChannel *io_channel =
+#ifdef G_OS_UNIX
+        g_io_channel_unix_new(socket_fd);
+#else
+        g_io_channel_win32_new_socket(socket_fd);
+#endif
+
+    self->watch_server_id = g_io_add_watch(io_channel,
+            G_IO_IN | G_IO_OUT | G_IO_HUP | G_IO_ERR,
+            connection_handle_io_cb,
+            self);
+}
+
 #ifdef G_OS_UNIX
 static gboolean
 signal_handler(gpointer user_data)
@@ -437,12 +455,7 @@ connection_incoming_cb(GSocketService    *service,
     /* Add a GSource watch to handle polling for us and handle IO in the callback */
     GSocket *connection_socket = g_socket_connection_get_socket(self->connection);
     g_socket_set_keepalive(connection_socket, self->keepalive);
-    int socket_fd = g_socket_get_fd(connection_socket);
-    GIOChannel *io_channel = g_io_channel_unix_new(socket_fd);
-    self->watch_server_id = g_io_add_watch(io_channel,
-            G_IO_IN | G_IO_OUT | G_IO_HUP | G_IO_ERR,
-            connection_handle_io_cb,
-            self);
+    create_watch(self);
     return G_SOURCE_REMOVE;
 }
 
@@ -552,17 +565,7 @@ main(int argc, char *argv[])
 
         GSocket *connection_socket = g_socket_connection_get_socket(self->connection);
         g_socket_set_keepalive(connection_socket, self->keepalive);
-        int socket_fd = g_socket_get_fd(connection_socket);
-        GIOChannel *io_channel =
-#ifdef G_OS_UNIX
-            g_io_channel_unix_new(socket_fd);
-#else
-            g_io_channel_win32_new_socket(socket_fd);
-#endif
-        self->watch_server_id = g_io_add_watch(io_channel,
-                G_IO_IN | G_IO_OUT | G_IO_HUP | G_IO_ERR,
-                connection_handle_io_cb,
-                self);
+        create_watch(self);
     } else {
         GSocketService *socket_service;
 
