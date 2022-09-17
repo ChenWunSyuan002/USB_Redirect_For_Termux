@@ -29,6 +29,7 @@ typedef struct redirect {
     } device;
     bool is_client;
     bool keepalive;
+    bool watch_inout;
     char *addr;
     int port;
     int verbosity;
@@ -41,6 +42,8 @@ typedef struct redirect {
 
     GMainLoop *main_loop;
 } redirect;
+
+static void create_watch(redirect *self);
 
 static bool
 parse_opt_device(const char *device, int *vendor, int *product)
@@ -163,6 +166,7 @@ parse_opts(int *argc, char ***argv)
     }
 
     self = g_new0(redirect, 1);
+    self->watch_inout = true;
     if (!parse_opt_device(device, &self->device.vendor, &self->device.product)) {
         g_printerr("Failed to parse device: '%s' - expected: vendor:product or busnum-devnum\n", device);
         g_clear_pointer(&self, g_free);
@@ -277,6 +281,20 @@ usbredir_log_cb(void *priv, int level, const char *msg)
     g_log_structured(G_LOG_DOMAIN, glog_level, "MESSAGE", msg);
 }
 
+static void
+update_watch(redirect *self)
+{
+    const bool watch_inout = usbredirhost_has_data_to_write(self->usbredirhost) != 0;
+    if (watch_inout == self->watch_inout) {
+        return;
+    }
+    g_source_remove(self->watch_server_id);
+    self->watch_server_id = 0;
+    self->watch_inout = watch_inout;
+
+    create_watch(self);
+}
+
 static int
 usbredir_read_cb(void *priv, uint8_t *data, int count)
 {
@@ -322,6 +340,7 @@ usbredir_write_cb(void *priv, uint8_t *data, int count)
         if (g_error_matches(err, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK)) {
             /* Try again later */
             nbytes = 0;
+            update_watch(self);
         } else {
             if (err != NULL) {
                 g_warning("Failure at %s: %s", __func__, err->message);
@@ -401,13 +420,18 @@ connection_handle_io_cb(GIOChannel *source, GIOCondition condition, gpointer use
             goto end;
         }
     }
-    if (condition & G_IO_OUT) {
+    // try to write data in any case, to avoid having another iteration and
+    // creation of another watch if there is space in output buffer
+    if (usbredirhost_has_data_to_write(self->usbredirhost) != 0) {
         int ret = usbredirhost_write_guest_data(self->usbredirhost);
         if (ret < 0) {
             g_critical("%s: Failed to write to guest", __func__);
             goto end;
         }
     }
+
+    // update the watch if needed
+    update_watch(self);
     return G_SOURCE_CONTINUE;
 
 end:
@@ -428,7 +452,7 @@ create_watch(redirect *self)
 #endif
 
     self->watch_server_id = g_io_add_watch(io_channel,
-            G_IO_IN | G_IO_OUT | G_IO_HUP | G_IO_ERR,
+            G_IO_IN | G_IO_HUP | G_IO_ERR | (self->watch_inout ? G_IO_OUT : 0),
             connection_handle_io_cb,
             self);
 }
