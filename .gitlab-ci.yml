@@ -2,7 +2,7 @@ image: fedora:latest
 
 variables:
   DEPENDENCIES: >-
-    gcc clang meson ninja-build valgrind git bzip2 libusb-devel glib2-devel
+    gcc clang meson ninja-build valgrind git bzip2 libusb1-devel glib2-devel
   FUZZING_DEPENDENCIES: >-
     clang libcxx-devel compiler-rt
   MINGW_DEPENDENCIES: >-
