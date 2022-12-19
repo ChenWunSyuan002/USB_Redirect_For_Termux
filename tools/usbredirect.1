@@ -4,6 +4,9 @@ usbredirect \- exporting an USB device for use from another (virtual) machine
 .SH SYNOPSIS
 .B usbredirect
 [\fI--device vendor:product\fR] [\fI--to addr:port\fR] [\fI--as addr:port\fR]
+.br
+.B usbredirect
+[\fI--device bus-device\fR] [\fI--to addr:port\fR] [\fI--as addr:port\fR]
 .SH DESCRIPTION
 usbredirect is an usbredir client for exporting an USB device either as TCP
 client or server, for use from another (virtual) machine through the usbredir
@@ -11,6 +14,9 @@ protocol.
 .PP
 You can specify the USB device to export by USB id in the form of
 \fI<vendorid>:<prodid>\fR.
+.br
+Or you can specify the USB device to export in the form of
+\fI<busnum>-<devnum>\fR.
 .PP
 Notice that an instance of usbredirect can only be used to export a single USB
 device and it will close once the other side closes the connection. If you

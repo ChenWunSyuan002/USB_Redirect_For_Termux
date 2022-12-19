@@ -139,7 +139,7 @@ parse_opts(int *argc, char ***argv)
     redirect *self = NULL;
 
     GOptionEntry entries[] = {
-        { "device", 0, 0, G_OPTION_ARG_STRING, &device, "Local USB device to be redirected", NULL },
+        { "device", 0, 0, G_OPTION_ARG_STRING, &device, "Local USB device to be redirected identified as either VENDOR:PRODUCT \"0123:4567\" or BUS-DEVICE \"5-2\"", NULL },
         { "to", 0, 0, G_OPTION_ARG_STRING, &remoteaddr, "Client URI to connect to", NULL },
         { "as", 0, 0, G_OPTION_ARG_STRING, &localaddr, "Server URI to be run", NULL },
         { "keepalive", 'k', 0, G_OPTION_ARG_NONE, &keepalive, "If we should set SO_KEEPALIVE flag on underlying socket", NULL },
