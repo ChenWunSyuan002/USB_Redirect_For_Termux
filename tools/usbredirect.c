@@ -467,6 +467,90 @@ signal_handler(gpointer user_data)
 }
 #endif
 
+static bool
+can_claim_usb_device(libusb_device *dev, libusb_device_handle **handle)
+{
+    int ret = libusb_open(dev, handle);
+    if (ret != 0) {
+        g_debug("Failed to open device");
+        return false;
+    }
+
+    /* Opening is not enough. We need to check if device can be claimed
+     * for I/O operations */
+    struct libusb_config_descriptor *config = NULL;
+    ret = libusb_get_active_config_descriptor(dev, &config);
+    if (ret != 0 || config == NULL) {
+        g_debug("Failed to get active descriptor");
+        *handle = NULL;
+        return false;
+    }
+
+#if LIBUSBX_API_VERSION >= 0x01000102
+    libusb_set_auto_detach_kernel_driver(*handle, 1);
+#endif
+
+    int i;
+    for (i = 0; i < config->bNumInterfaces; i++) {
+        int interface_num = config->interface[i].altsetting[0].bInterfaceNumber;
+#if LIBUSBX_API_VERSION < 0x01000102
+        ret = libusb_detach_kernel_driver(handle, interface_num);
+        if (ret != 0 && ret != LIBUSB_ERROR_NOT_FOUND
+            && ret != LIBUSB_ERROR_NOT_SUPPORTED) {
+            g_error("failed to detach driver from interface %d: %s",
+                    interface_num, libusb_error_name(ret));
+            *handle = NULL;
+            break
+        }
+#endif
+        ret = libusb_claim_interface(*handle, interface_num);
+        if (ret != 0) {
+            g_debug("Could not claim interface");
+            *handle = NULL;
+            break;
+        }
+        ret = libusb_release_interface(*handle, interface_num);
+        if (ret != 0) {
+            g_debug("Could not release interface");
+            *handle = NULL;
+            break;
+        }
+    }
+
+    libusb_free_config_descriptor(config);
+    return *handle != NULL;
+}
+
+static libusb_device_handle *
+open_usb_device(redirect *self)
+{
+    struct libusb_device **devs;
+    struct libusb_device_handle *dev_handle = NULL;
+    size_t i, ndevices;
+
+    ndevices = libusb_get_device_list(NULL, &devs);
+    for (i = 0; i < ndevices; i++) {
+        struct libusb_device_descriptor desc;
+        if (libusb_get_device_descriptor(devs[i], &desc) != 0) {
+            g_warning("Failed to get descriptor");
+            continue;
+        }
+
+        if (self->device.vendor != desc.idVendor ||
+            self->device.product != desc.idProduct) {
+            continue;
+        }
+
+        if (can_claim_usb_device(devs[i], &dev_handle)) {
+            break;
+        }
+    }
+
+    libusb_free_device_list(devs, 1);
+    return dev_handle;
+}
+
+
 static gboolean
 connection_incoming_cb(GSocketService    *service,
                        GSocketConnection *client_connection,
@@ -516,11 +600,7 @@ main(int argc, char *argv[])
     g_unix_signal_add(SIGTERM, signal_handler, self);
 #endif
 
-    /* This is binary is not meant to support plugins so it is safe to pass
-     * NULL as libusb_context here and all subsequent calls */
-    libusb_device_handle *device_handle = libusb_open_device_with_vid_pid(NULL,
-            self->device.vendor,
-            self->device.product);
+    libusb_device_handle *device_handle = open_usb_device(self);
     if (!device_handle) {
         g_printerr("Failed to open device!\n");
         goto err_init;
