@@ -44,6 +44,7 @@ typedef struct redirect {
     GThread *event_thread;
     int event_thread_run;
     int watch_server_id;
+    GIOChannel *io_channel;
 
     GMainLoop *main_loop;
 } redirect;
@@ -272,6 +273,7 @@ update_watch(redirect *self)
     if (watch_inout == self->watch_inout) {
         return;
     }
+    g_clear_pointer(&self->io_channel, g_io_channel_unref);
     g_source_remove(self->watch_server_id);
     self->watch_server_id = 0;
     self->watch_inout = watch_inout;
@@ -428,14 +430,17 @@ create_watch(redirect *self)
 {
     GSocket *socket = g_socket_connection_get_socket(self->connection);
     int socket_fd = g_socket_get_fd(socket);
-    GIOChannel *io_channel =
+
+    g_assert_null(self->io_channel);
+    self->io_channel =
 #ifdef G_OS_UNIX
         g_io_channel_unix_new(socket_fd);
 #else
         g_io_channel_win32_new_socket(socket_fd);
 #endif
 
-    self->watch_server_id = g_io_add_watch(io_channel,
+    g_assert_cmpint(self->watch_server_id, ==, 0);
+    self->watch_server_id = g_io_add_watch(self->io_channel,
             G_IO_IN | G_IO_HUP | G_IO_ERR | (self->watch_inout ? G_IO_OUT : 0),
             connection_handle_io_cb,
             self);
