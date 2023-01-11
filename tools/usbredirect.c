@@ -693,6 +693,7 @@ main(int argc, char *argv[])
 
     self->main_loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(self->main_loop);
+    g_clear_pointer(&self->main_loop, g_main_loop_unref);
 
     g_atomic_int_set(&self->event_thread_run, FALSE);
     if (self->event_thread) {
