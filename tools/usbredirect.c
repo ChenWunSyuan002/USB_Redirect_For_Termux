@@ -471,8 +471,7 @@ can_claim_usb_device(libusb_device *dev, libusb_device_handle **handle)
     ret = libusb_get_active_config_descriptor(dev, &config);
     if (ret != 0 || config == NULL) {
         g_debug("Failed to get active descriptor");
-        *handle = NULL;
-        return false;
+        goto fail;
     }
 
 #if LIBUSBX_API_VERSION >= 0x01000102
@@ -488,26 +487,29 @@ can_claim_usb_device(libusb_device *dev, libusb_device_handle **handle)
             && ret != LIBUSB_ERROR_NOT_SUPPORTED) {
             g_error("failed to detach driver from interface %d: %s",
                     interface_num, libusb_error_name(ret));
-            *handle = NULL;
-            break
+            goto fail;
         }
 #endif
         ret = libusb_claim_interface(*handle, interface_num);
         if (ret != 0) {
             g_debug("Could not claim interface");
-            *handle = NULL;
-            break;
+            goto fail;
         }
         ret = libusb_release_interface(*handle, interface_num);
         if (ret != 0) {
             g_debug("Could not release interface");
-            *handle = NULL;
-            break;
+            goto fail;
         }
     }
 
     libusb_free_config_descriptor(config);
-    return *handle != NULL;
+    return true;
+
+fail:
+    libusb_free_config_descriptor(config);
+    libusb_close(*handle);
+    *handle = NULL;
+    return false;
 }
 
 static libusb_device_handle *
