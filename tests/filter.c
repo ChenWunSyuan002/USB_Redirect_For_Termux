@@ -231,7 +231,8 @@ test_check(gconstpointer private)
 static void
 add_tests(const char *prefix, const struct test items[], int count)
 {
-    for (int i = 0; i < count; i++) {
+    int i;
+    for (i = 0; i < count; i++) {
         char *name = g_strdup_printf("%s/#%d/%s", prefix, i, items[i].name);
         g_test_add_data_func(name, (gconstpointer)&items[i], &test_check);
         g_free(name);
