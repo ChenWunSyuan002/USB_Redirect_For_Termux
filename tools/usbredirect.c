@@ -589,7 +589,9 @@ main(int argc, char *argv[])
 #ifdef G_OS_WIN32
     /* WinUSB is the default by backwards compatibility so this is needed to
      * switch to USBDk backend. */
+#   if LIBUSBX_API_VERSION >= 0x01000106
     libusb_set_option(NULL, LIBUSB_OPTION_USE_USBDK); 
+#   endif
 #endif
 
 #ifdef G_OS_UNIX
@@ -644,11 +646,15 @@ main(int argc, char *argv[])
     /* Only allow libusb logging if log verbosity is uredirparser_debug_data
      * (or higher), otherwise we disable it here while keeping usbredir's logs enable. */
     if  (self->verbosity < usbredirparser_debug_data)  {
+#if LIBUSBX_API_VERSION >= 0x01000106
         int ret = libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_NONE);
         if (ret != LIBUSB_SUCCESS) {
             g_warning("error disabling libusb log level: %s", libusb_error_name(ret));
             goto end;
         }
+#else
+        libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_NONE);
+#endif
     }
 
     if (self->is_client) {
