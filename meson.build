@@ -22,7 +22,7 @@ if host_machine.system() != 'windows'
 endif
 
 # Check if we are building from .git
-git = run_command('test', '-d', '.git').returncode() == 0
+git = run_command('test', '-d', '.git', check : false).returncode() == 0
 git_werror = get_option('git_werror')
 if git_werror.enabled() or git_werror.auto() and git
   cc_flags += [ '-Werror' ]
