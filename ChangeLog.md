@@ -1,3 +1,11 @@
+# usbredir-0.14.0 - 29 Feb 2024
+
+- !67 usbredirect: Fix redirecting identical devices
+- !64 usbredirect: Fix CPU tight loop when run as TCP server
+- !68 usbredirect: Fix some minor memory leaks
+- !65 usbredirect: Add documentation about bus-device option
+- !70 usbredirtestclient: Fix build on MacOS 10.5
+
 # usbredir-0.13.0 - 01 Aug 2022
 
 - !61 Fix regression on unserialize data
