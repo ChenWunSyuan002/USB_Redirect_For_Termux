@@ -210,7 +210,7 @@ thread_handle_libusb_events(gpointer user_data)
 }
 
 #if LIBUSBX_API_VERSION >= 0x01000107
-static void
+static void LIBUSB_CALL
 debug_libusb_cb(libusb_context *ctx, enum libusb_log_level level, const char *msg)
 {
     GLogLevelFlags glog_level;
