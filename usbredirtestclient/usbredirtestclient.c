@@ -409,6 +409,7 @@ static int usbredirtestclient_cmdline_ctrl(void)
             }
             if (!arg || *endptr != '\0') {
                 printf("Missing or invalid data byte(s)\n");
+                free(data);
                 return 0;
             }
         }
