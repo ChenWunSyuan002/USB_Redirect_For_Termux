@@ -1,3 +1,76 @@
+#define FOR_TERMUX 1
+
+#ifdef THIS_IS_A_COMMENT
+
+//
+// Install on termux: ninja, libusb
+// Download source code zip file from https://gitlab.freedesktop.org/spice/usbredir
+// Install on termux: https://github.com/mesonbuild/meson
+// https://mesonbuild.com/Getting-meson.html
+//
+
+// "USB redirection over the network": https://web.archive.org/web/20160114122824/www.linux-kvm.com/content/usb-redirection-over-network
+
+// "Bug 1085318 - Can't redirect tcp type USB device ": https://bugzilla.redhat.com/show_bug.cgi?id=1085318
+
+// "usbredirect doesn't know how to handle multiple identical USB devices": https://gitlab.freedesktop.org/spice/usbredir/-/issues/29
+
+// "RFE: add a usbredirclient, to use with a qemu socket chardev in server mode": https://gitlab.freedesktop.org/spice/usbredir/-/issues/1
+//    https://bugzilla.redhat.com/show_bug.cgi?id=844657
+//    https://web.archive.org/web/20160429170306/bugs.freedesktop.org/show_bug.cgi?id=72766
+
+// "Add a tcp client & server standalone binary": https://gitlab.freedesktop.org/spice/usbredir/-/merge_requests/2
+
+
+//
+// "[Spice-devel] spice-gtk usb-redirection": https://lists.freedesktop.org/archives/spice-devel/2012-July/thread.html
+//    "[Spice-devel] spice-gtk usb-redirection": https://lists.freedesktop.org/archives/spice-devel/2012-August/thread.html
+// https://hansdegoede.livejournal.com/tag/spice
+// Source code for remote-viewer (SPICE): https://gitlab.com/virt-viewer
+//
+
+#endif
+
+#ifdef THIS_IS_A_COMMENT
+
+// From https://wiki.termux.com/wiki/Termux-usb
+// and 
+// https://gist.githubusercontent.com/bndeff/8c391bc3fd8d9f1dbd133ac6ead7f45e/raw/6d7174a129301eeb670fe808cd9d25ec261f7f9e/usbtest.c
+
+
+#include <stdio.h>
+#include <assert.h>
+#include <libusb-1.0/libusb.h>
+
+int main(int argc, char **argv) {
+    libusb_context *context;
+    libusb_device_handle *handle;
+    libusb_device *device;
+    struct libusb_device_descriptor desc;
+    unsigned char buffer[256];
+    int fd;
+    assert((argc > 1) && (sscanf(argv[1], "%d", &fd) == 1));
+    libusb_set_option(NULL, LIBUSB_OPTION_WEAK_AUTHORITY);
+    assert(!libusb_init(&context));
+    assert(!libusb_wrap_sys_device(context, (intptr_t) fd, &handle));
+    device = libusb_get_device(handle);
+    assert(!libusb_get_device_descriptor(device, &desc));
+    printf("Vendor ID: %04x\n", desc.idVendor);
+    printf("Product ID: %04x\n", desc.idProduct);
+    assert(libusb_get_string_descriptor_ascii(handle, desc.iManufacturer, buffer, 256) >= 0);
+    printf("Manufacturer: %s\n", buffer);
+    assert(libusb_get_string_descriptor_ascii(handle, desc.iProduct, buffer, 256) >= 0);
+    printf("Product: %s\n", buffer);
+    if (libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, buffer, 256) >= 0)
+        printf("Serial No: %s\n", buffer);
+    libusb_exit(context);
+}
+#endif
+
+#ifdef FOR_TERMUX
+#include <assert.h>
+#endif
+
 #include "config.h"
 #include <stdio.h>
 #include <stdbool.h>
@@ -59,6 +132,13 @@ parse_opt_device(redirect *self, const char *device)
         return true;
     }
 
+
+#ifdef FOR_TERMUX
+    if (g_strrstr(device, "/") != NULL) {
+        return true;
+    }
+#endif
+
     if (g_strrstr(device, "-") != NULL) {
         self->by_bus = true;
         char **usbid = g_strsplit(device, "-", 2);
@@ -116,12 +196,18 @@ parse_opt_uri(const char *uri, char **adr, int *port)
 static redirect *
 parse_opts(int *argc, char ***argv)
 {
+
+
+
+
     char *device = NULL;
     char *remoteaddr = NULL;
     char *localaddr = NULL;
     gboolean keepalive = FALSE;
     gint verbosity = 0; /* none */
     redirect *self = NULL;
+
+
 
     GOptionEntry entries[] = {
         { "device", 0, 0, G_OPTION_ARG_STRING, &device, "Local USB device to be redirected identified as either VENDOR:PRODUCT \"0123:4567\" or BUS-DEVICE \"5-2\"", NULL },
@@ -142,6 +228,8 @@ parse_opts(int *argc, char ***argv)
         goto end;
     }
 
+
+
     /* check options */
 
     if (!remoteaddr && !localaddr) {
@@ -157,6 +245,7 @@ parse_opts(int *argc, char ***argv)
         g_clear_pointer(&self, g_free);
         goto end;
     }
+
 
     if (parse_opt_uri(remoteaddr, &self->addr, &self->port)) {
         self->is_client = true;
@@ -210,7 +299,7 @@ thread_handle_libusb_events(gpointer user_data)
 }
 
 #if LIBUSBX_API_VERSION >= 0x01000107
-static void LIBUSB_CALL
+static void
 debug_libusb_cb(libusb_context *ctx, enum libusb_log_level level, const char *msg)
 {
     GLogLevelFlags glog_level;
@@ -569,17 +658,41 @@ int
 main(int argc, char *argv[])
 {
     GError *err = NULL;
+    
 
+
+#ifdef THIS_IS_A_COMMENT
     if (libusb_init(NULL)) {
         g_warning("Could not init libusb\n");
         goto err_init;
     }
+#endif
+
+
+
+
+#ifdef FOR_TERMUX
+printf("\n\nIN-MAIN-BEFORE-parse_opts argc = %d\n\n", argc) ;
+printf("\n\nIN-MAIN-BEFORE-parse_opts argv[0] = %s\n\n", argv[0]) ;
+printf("\n\nIN-MAIN-BEFORE-parse_opts argv[1] = %s\n\n", argv[1]) ;
+printf("\n\nIN-MAIN-BEFORE-parse_opts argv[2] = %s\n\n", argv[2]) ;
+printf("\n\nIN-MAIN-BEFORE-parse_opts argv[3] = %s\n\n", argv[3]) ;
+printf("\n\nIN-MAIN-BEFORE-parse_opts argv[4] = %s\n\n", argv[4]) ;
+printf("\n\nIN-MAIN-BEFORE-parse_opts argv[5] = %s\n\n", argv[5]) ;
+// printf("\n\nIN-MAIN-BEFORE-parse_opts argv[6] = %s\n\n", argv[6]) ;
+// printf("\n\nIN-MAIN-BEFORE-parse_opts argv[7] = %s\n\n", argv[7]) ;
+#endif
+
 
     redirect *self = parse_opts(&argc, &argv);
+
     if (!self) {
         /* specific issues logged in parse_opts() */
         return 1;
     }
+
+
+
 
 #if LIBUSBX_API_VERSION >= 0x01000107
     /* This was introduced in 1.0.23 */
@@ -600,11 +713,57 @@ main(int argc, char *argv[])
     g_unix_signal_add(SIGTERM, signal_handler, self);
 #endif
 
+
+
+
+
+#ifdef THIS_IS_A_COMMENT
     libusb_device_handle *device_handle = open_usb_device(self);
     if (!device_handle) {
         g_printerr("Failed to open device!\n");
         goto err_init;
     }
+#endif
+
+#ifdef FOR_TERMUX
+    libusb_context *context;
+    libusb_device_handle *device_handle;
+    libusb_device *termux_device;
+    struct libusb_device_descriptor desc;
+    unsigned char buffer[256];
+    int fd;
+
+#ifdef FOR_TERMUX
+printf("\n\nIN-MAIN-BEFORE sscanf argc = %d\n\n", argc) ;
+printf("\n\nIN-MAIN-BEFORE sscanf argv[0] = %s\n\n", argv[0]) ;
+printf("\n\nIN-MAIN-BEFORE sscanf argv[1] = %s\n\n", argv[1]) ;
+printf("\n\nIN-MAIN-BEFORE sscanf argv[2] = %s\n\n", argv[2]) ;
+printf("\n\nIN-MAIN-BEFORE sscanf argv[3] = %s\n\n", argv[3]) ;
+printf("\n\nIN-MAIN-BEFORE sscanf argv[4] = %s\n\n", argv[4]) ;
+printf("\n\nIN-MAIN-BEFORE sscanf argv[5] = %s\n\n", argv[5]) ;
+// printf("\n\nIN-MAIN-BEFORE sscanf argv[6] = %s\n\n", argv[6]) ;
+// printf("\n\nIN-MAIN-BEFORE sscanf argv[7] = %s\n\n", argv[7]) ;
+#endif
+
+    assert(sscanf(argv[1], "%d", &fd) == 1);
+    libusb_set_option(NULL, LIBUSB_OPTION_WEAK_AUTHORITY);
+    assert(!libusb_init(&context));
+    assert(!libusb_wrap_sys_device(context, (intptr_t) fd, &device_handle));
+    termux_device = libusb_get_device(device_handle);
+    assert(!libusb_get_device_descriptor(termux_device, &desc));
+    printf("Vendor ID: %04x\n", desc.idVendor);
+    printf("Product ID: %04x\n", desc.idProduct);
+    assert(libusb_get_string_descriptor_ascii(device_handle, desc.iManufacturer, buffer, 256) >= 0);
+    printf("Manufacturer: %s\n", buffer);
+    assert(libusb_get_string_descriptor_ascii(device_handle, desc.iProduct, buffer, 256) >= 0);
+    printf("Product: %s\n", buffer);
+    if (libusb_get_string_descriptor_ascii(device_handle, desc.iSerialNumber, buffer, 256) >= 0)
+        printf("Serial No: %s\n", buffer);
+
+#endif
+
+
+
 
     /* As per doc below, we are not using hotplug so we must first call
      * libusb_open() and then we can start the event thread.
