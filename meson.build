@@ -4,7 +4,7 @@ project('usbredir', 'c',
     meson_version : '>= 0.53',
     default_options : [
         'buildtype=debugoptimized',
-        'warning_level=1',
+        'warning_level=0',
     ])
 
 summary_info = {'prefix': get_option('prefix')}
